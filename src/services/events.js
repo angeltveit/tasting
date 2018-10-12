@@ -2,11 +2,11 @@ import axios from "axios"
 
 const instance = axios.create({
   baseURL: "/api",
-  headers: { "Authorization": "Bearer " + localStorage.beerToken }
+  headers: { "Authorization": "Beerer " + localStorage.beerToken }
 })
 
-export const createEvent = eventName =>
-  instance.post("/events", { eventName })
+export const createEvent = name =>
+  instance.post("/events", { name })
     .then(res => res.data)
     .catch(console.error)
 
