@@ -1,4 +1,4 @@
 node_modules
 build
-server/development.js
+server/config/development.js
 assets/build.js
