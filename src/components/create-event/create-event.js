@@ -7,7 +7,7 @@ import { Route } from "widgets-router"
   html`
     <h1>New event</h1>
     <input placeholder="event name" onchange=${e => this.eventName = e.target.value} />
-    <button onclick=${() => this.createEvent()}>create event</button>
+    <beer-button onclick=${() => this.createEvent()}>create event</beer-button>
   `
 })
 export default class CreateEvent extends HTMLElement {
