@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node server",
     "serve": "budo src --dir . --serve assets/build.js --live --open -- -t babelify",
-    "watch": "watchify src/index.js -o assets/build.js -t [babelify]",
+    "watch": "watchify src/index.js -o assets/build.js -t [babelify] -p browserify-hmr",
     "build": "browserify src/index.js -o assets/build.js -t babelify",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -37,6 +37,7 @@
     "babel-preset-minify": "^0.5.0",
     "babelify": "^10.0.0",
     "browserify": "^16.2.2",
+    "browserify-hmr": "^0.3.6",
     "gulp": "^3.9.1",
     "gulp-babel": "^8.0.0",
     "gulp-rename": "^1.4.0",

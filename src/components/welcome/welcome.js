@@ -6,7 +6,7 @@ import { Route } from 'widgets-router'
 @Component('demo')
 @Template(function (html) {
   html `
-    <h1>Hello ${this.user.username}</h1>
+    <h1>Hello ${this.user && this.user.username}</h1>
     <h1>☕Fresh new component «welcome»</h1>
   `
 })

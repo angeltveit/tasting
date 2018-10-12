@@ -1,6 +1,6 @@
 import { bootstrap } from '@scoutgg/widgets'
 import { hyper as renderer } from '@scoutgg/widgets/cjs/renderers/hyper'
-import { PageRouter, router } from 'widgets-router'
+import { PageRouter, router, routes } from 'widgets-router'
 import qs from 'query-string'
 import hyper from 'hyperhtml'
 import { login, current } from './services/auth'
