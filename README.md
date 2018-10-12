@@ -1,6 +1,6 @@
 # Blindsaking av øl på AKA WOOZY
 
-## HOW IT WORKS MVP
+## HOW IT WORKS AKA MVP
 
 1. Opprette event via backoffice-side, man setter navn, får en unik pin
 2. Verten/ølmasteren finne alle øllene og lager en liste med de som skal drikkes
