@@ -1,4 +1,4 @@
-# Blindsaking av øl på AKA WOOZY
+# Blindsmaking av øl via untappd AKA WOOZY
 
 ## HOW IT WORKS AKA MVP
 
