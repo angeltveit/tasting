@@ -17,8 +17,4 @@ export default class Welcome extends HTMLElement {
   get user() {
     return current()
   }
-
-  createEvent() {
-
-  }
 }
