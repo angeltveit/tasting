@@ -1,6 +1,6 @@
 import { Component, Template } from '@scoutgg/widgets'
 import { Route } from "widgets-router"
-import { createEvent } from "../../api"
+import { createEvent } from "../../services/events"
 
 @Route("/create-event")
 @Component('beer')
