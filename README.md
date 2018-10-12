@@ -21,6 +21,10 @@
 
 ???
 
-## HOW TO SET UP
+## HOW TO SET UP LOCAL DEVELOPMENT
 
+1. git clone https://github.com/angeltveit/tasting.git
+2. yarn
+3. [installer postgres](https://www.postgresql.org/download)
+2. knex migrate:latest
 ???
