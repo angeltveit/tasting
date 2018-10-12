@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node server",
     "serve": "budo src --dir . --serve assets/build.js --live --open -- -t babelify",
-    "watch": "watchify src/index.js -o assets/build.js -t [babelify] -p browserify-hmr",
+    "watch": "watchify src/index.js -o assets/build.js -t [babelify]",
     "build": "browserify src/index.js -o assets/build.js -t babelify",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
