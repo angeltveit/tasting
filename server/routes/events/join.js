@@ -32,5 +32,5 @@ module.exports = async function create_event(req, res) {
       status: 'ok',
     }, Object.assign({}, event, {
       userCount: participants.length,
-    }))
+    })))
 }
