@@ -19,7 +19,18 @@
 
 ## HOW ITS ALL CONNECTED
 
-???
+Database med tre tables
+
+* events_participants
+* events
+* user_table
+
+APIet er tilgjengelig på /api
+
+POST  /events create
+
+POST /events/join :code
+
 
 ## HOW TO SET UP LOCAL DEVELOPMENT
 
