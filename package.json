@@ -25,7 +25,7 @@
     "passport": "^0.4.0",
     "passport-untappd": "^1.0.0",
     "query-string": "^6.2.0",
-    "widgets-router": "../widgets-router"
+    "widgets-router": "https://github.com/angeltveit/widgets-router.git"
   },
   "devDependencies": {
     "@babel/cli": "^7.0.0",

@@ -4579,8 +4579,9 @@ wide-align@^1.1.0:
   dependencies:
     string-width "^1.0.2 || 2"
 
-widgets-router@../widgets-router:
+"widgets-router@https://github.com/angeltveit/widgets-router.git":
   version "1.0.0"
+  resolved "https://github.com/angeltveit/widgets-router.git#ca1ba82a9991b624bc5d4bc407409dd99d07df87"
   dependencies:
     "@scoutgg/widgets" "^2.2.0"
     page "^1.10.2"
