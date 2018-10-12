@@ -21,12 +21,14 @@
     "@scoutgg/widgets": "^2.2.0",
     "express": "^4.16.3",
     "hyperhtml": "^2.13.0",
+    "joi": "^13.7.0",
     "jsonwebtoken": "^8.3.0",
     "knex": "^0.15.2",
     "passport": "^0.4.0",
     "passport-untappd": "^1.0.0",
     "pg": "^7.5.0",
     "query-string": "^6.2.0",
+    "random-string": "^0.2.0",
     "widgets-router": "https://github.com/angeltveit/widgets-router.git"
   },
   "devDependencies": {
