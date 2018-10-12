@@ -10,3 +10,7 @@ export const createEvent = eventName =>
     .then(res => res.data)
     .catch(console.error)
 
+export const joinEvent = eventCode =>
+  instance.post("/events/join", { eventCode })
+    .then(res => res.data)
+    .catch(console.error)

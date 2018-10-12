@@ -1,5 +1,7 @@
 import { Component, Template } from '@scoutgg/widgets'
 import { Route } from "widgets-router"
+import { joinEvent } from "../../services/events"
+
 
 @Route("/join-event")
 @Component('beer')
@@ -14,6 +16,7 @@ export default class JoinEvent extends HTMLElement {
   eventPin = null
 
   joinEvent() {
-    console.log("joining event", this.eventPin)
+    const result = joinEvent(this.eventPin)
+    console.log("joining event", this.eventPin, result)
   }
 }
