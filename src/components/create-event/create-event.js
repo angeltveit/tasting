@@ -1,5 +1,6 @@
 import { Component, Template } from '@scoutgg/widgets'
 import { Route } from "widgets-router"
+import { createEvent } from "../../api"
 
 @Route("/create-event")
 @Component('beer')
@@ -14,8 +15,8 @@ export default class CreateEvent extends HTMLElement {
 
   eventName = null
 
-
-  createEvent() {
-    console.log("created event", this.eventName)
+  async createEvent() {
+    const eventResponse = await createEvent(this.eventName)
+    console.log("created event", this.eventName, eventResponse)
   }
 }
