@@ -1,190 +1,384 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-// shim for using process in browser
-var process = module.exports = {};
+"use strict";
 
-// cached from whatever global is present so that test runners that stub it
-// don't break things.  But we need to wrap it in a try catch in case it is
-// wrapped in strict mode code which doesn't define any globals.  It's inside a
-// function because try/catches deoptimize in certain engines.
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Attribute = Attribute;
 
-var cachedSetTimeout;
-var cachedClearTimeout;
+var _utils = require("../utils.js");
 
-function defaultSetTimout() {
-    throw new Error('setTimeout has not been defined');
-}
-function defaultClearTimeout () {
-    throw new Error('clearTimeout has not been defined');
-}
-(function () {
-    try {
-        if (typeof setTimeout === 'function') {
-            cachedSetTimeout = setTimeout;
+function Attribute(name, type, options = {
+  default: ''
+}) {
+  const property = (0, _utils.camelCase)(name);
+  const attribute = (0, _utils.kebabCase)(name);
+  return function define(Class) {
+    if (!Class.observedAttributes) {
+      Class.observedAttributes = [];
+    }
+
+    Class.observedAttributes.push(attribute);
+    Object.defineProperty(Class.prototype, property, {
+      enumerable: true,
+      configurable: true,
+
+      get() {
+        if (type === Boolean) {
+          return this.hasAttribute(attribute);
+        }
+
+        const value = this.getAttribute(attribute);
+
+        if (type.instance) {
+          return type.instance(value === null ? options.default : value);
         } else {
-            cachedSetTimeout = defaultSetTimout;
+          return type(value === null ? options.default : value);
         }
-    } catch (e) {
-        cachedSetTimeout = defaultSetTimout;
-    }
-    try {
-        if (typeof clearTimeout === 'function') {
-            cachedClearTimeout = clearTimeout;
+      },
+
+      set(value) {
+        if (type === Boolean) {
+          if (value) {
+            this.setAttribute(attribute, '');
+          } else {
+            this.removeAttribute(attribute);
+          }
         } else {
-            cachedClearTimeout = defaultClearTimeout;
+          this.setAttribute(attribute, value);
         }
-    } catch (e) {
-        cachedClearTimeout = defaultClearTimeout;
+      }
+
+    });
+  };
+}
+
+},{"../utils.js":7}],2:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Component = Component;
+exports.getTagName = getTagName;
+exports.register = register;
+exports.bootstrap = bootstrap;
+
+var _utils = require("../utils.js");
+
+const COMPONENTS = [];
+const sggWidgets = Symbol.for('sggWidgets');
+
+function Component(namespace) {
+  return function define(Class) {
+    Class.namespace = namespace;
+
+    if (customElements[sggWidgets]) {
+      return register(Class);
     }
-} ())
-function runTimeout(fun) {
-    if (cachedSetTimeout === setTimeout) {
-        //normal enviroments in sane situations
-        return setTimeout(fun, 0);
+
+    COMPONENTS.push(Class);
+  };
+}
+
+function getTagName(Class) {
+  if (Class.tagName) return Class.tagName;
+  const {
+    namespace,
+    className
+  } = Class;
+  const name = className || Class.name;
+  return Class.tagName = (0, _utils.kebabCase)(namespace + name);
+}
+
+function register(component) {
+  const tagName = getTagName(component);
+  const plugins = customElements[sggWidgets];
+  const Component = (0, _utils.define)(plugins, component);
+  const Element = customElements.get(tagName);
+
+  if (Element) {
+    return (0, _utils.transfer)(Element, Component);
+  }
+
+  customElements.define(tagName, Component);
+}
+
+function bootstrap(plugins = []) {
+  customElements[sggWidgets] = plugins;
+
+  for (const component of COMPONENTS) {
+    register(component);
+  }
+}
+
+},{"../utils.js":7}],3:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Template = Template;
+
+function Template(template) {
+  return function define(Class) {
+    Class.prototype.template = template;
+  };
+}
+
+},{}],4:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+var _exportNames = {
+  Component: true,
+  bootstrap: true,
+  Template: true,
+  Attribute: true
+};
+Object.defineProperty(exports, "Component", {
+  enumerable: true,
+  get: function () {
+    return _component.Component;
+  }
+});
+Object.defineProperty(exports, "bootstrap", {
+  enumerable: true,
+  get: function () {
+    return _component.bootstrap;
+  }
+});
+Object.defineProperty(exports, "Template", {
+  enumerable: true,
+  get: function () {
+    return _template.Template;
+  }
+});
+Object.defineProperty(exports, "Attribute", {
+  enumerable: true,
+  get: function () {
+    return _attribute.Attribute;
+  }
+});
+
+var _component = require("./decorators/component.js");
+
+var _template = require("./decorators/template.js");
+
+var _attribute = require("./decorators/attribute.js");
+
+var _utils = require("./utils.js");
+
+Object.keys(_utils).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  if (Object.prototype.hasOwnProperty.call(_exportNames, key)) return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function () {
+      return _utils[key];
     }
-    // if setTimeout wasn't available but was latter defined
-    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
-        cachedSetTimeout = setTimeout;
-        return setTimeout(fun, 0);
+  });
+});
+
+},{"./decorators/attribute.js":1,"./decorators/component.js":2,"./decorators/template.js":3,"./utils.js":7}],5:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.hyper = hyper;
+
+var _utils = require("../utils.js");
+
+var _queue = require("./queue.js");
+
+function hyper({
+  bind
+}) {
+  const shedule = (0, _queue.queue)(function render(node) {
+    return node.template(node.html);
+  });
+  return function renderer(Class) {
+    (0, _utils.plugin)(Class.prototype, {
+      attributeChangedCallback(args, next) {
+        this.render();
+        return next();
+      },
+
+      connectedCallback(args, next) {
+        this.render();
+        return next();
+      },
+
+      render([callback], next) {
+        if (!this.html) {
+          this.attachShadow({
+            mode: 'open'
+          });
+          this.html = bind(this.shadowRoot);
+        }
+
+        shedule(this, (...args) => {
+          if (typeof callback === 'function') {
+            callback(...args);
+          }
+
+          next();
+        });
+      }
+
+    });
+  };
+}
+
+},{"../utils.js":7,"./queue.js":6}],6:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.queue = queue;
+
+var _utils = require("../utils.js");
+
+function queue(render) {
+  const queue = new Set();
+  const cache = new WeakMap();
+  const callbacks = new Set();
+
+  function apply() {
+    for (const node of queue) {
+      render(node, cache);
     }
+  }
+
+  function attempt() {
     try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedSetTimeout(fun, 0);
-    } catch(e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
-            return cachedSetTimeout.call(null, fun, 0);
-        } catch(e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
-            return cachedSetTimeout.call(this, fun, 0);
-        }
+      apply();
+    } catch (error) {
+      throw error;
+    } finally {
+      queue.clear();
+
+      for (const callback of callbacks) {
+        callback();
+      }
+
+      callbacks.clear();
+    }
+  }
+
+  return function shedule(element, callback) {
+    if (!queue.size) {
+      requestAnimationFrame(attempt);
     }
 
-
-}
-function runClearTimeout(marker) {
-    if (cachedClearTimeout === clearTimeout) {
-        //normal enviroments in sane situations
-        return clearTimeout(marker);
-    }
-    // if clearTimeout wasn't available but was latter defined
-    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
-        cachedClearTimeout = clearTimeout;
-        return clearTimeout(marker);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedClearTimeout(marker);
-    } catch (e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
-            return cachedClearTimeout.call(null, marker);
-        } catch (e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
-            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
-            return cachedClearTimeout.call(this, marker);
-        }
+    if (typeof callback === 'function') {
+      callbacks.add(callback);
     }
 
-
-
-}
-var queue = [];
-var draining = false;
-var currentQueue;
-var queueIndex = -1;
-
-function cleanUpNextTick() {
-    if (!draining || !currentQueue) {
-        return;
-    }
-    draining = false;
-    if (currentQueue.length) {
-        queue = currentQueue.concat(queue);
-    } else {
-        queueIndex = -1;
-    }
-    if (queue.length) {
-        drainQueue();
-    }
+    queue.add(element);
+  };
 }
 
-function drainQueue() {
-    if (draining) {
-        return;
-    }
-    var timeout = runTimeout(cleanUpNextTick);
-    draining = true;
+},{"../utils.js":7}],7:[function(require,module,exports){
+"use strict";
 
-    var len = queue.length;
-    while(len) {
-        currentQueue = queue;
-        queue = [];
-        while (++queueIndex < len) {
-            if (currentQueue) {
-                currentQueue[queueIndex].run();
-            }
-        }
-        queueIndex = -1;
-        len = queue.length;
-    }
-    currentQueue = null;
-    draining = false;
-    runClearTimeout(timeout);
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.kebabCase = kebabCase;
+exports.camelCase = camelCase;
+exports.define = define;
+exports.middleware = middleware;
+exports.plugin = plugin;
+exports.transfer = transfer;
+const UPPER = /.[A-Z]/g;
+
+function kebabCase(string) {
+  return string.replace(UPPER, c => c[0] + '-' + c[1].toLowerCase());
 }
 
-process.nextTick = function (fun) {
-    var args = new Array(arguments.length - 1);
-    if (arguments.length > 1) {
-        for (var i = 1; i < arguments.length; i++) {
-            args[i - 1] = arguments[i];
-        }
-    }
-    queue.push(new Item(fun, args));
-    if (queue.length === 1 && !draining) {
-        runTimeout(drainQueue);
-    }
-};
-
-// v8 likes predictible objects
-function Item(fun, array) {
-    this.fun = fun;
-    this.array = array;
+function camelCase(string) {
+  return string.replace(/-./g, c => c[1].toUpperCase());
 }
-Item.prototype.run = function () {
-    this.fun.apply(null, this.array);
-};
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-process.version = ''; // empty string to avoid regexp issues
-process.versions = {};
 
-function noop() {}
+function define(decorators = [], target = decorators.pop()) {
+  for (const transform of decorators.reverse()) {
+    target = transform(target) || target;
+  }
 
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-process.prependListener = noop;
-process.prependOnceListener = noop;
+  return target;
+}
 
-process.listeners = function (name) { return [] }
+function middleware(done) {
+  const middleware = [];
+  Object.assign(pipeline, {
+    use(...callbacks) {
+      return middleware.push(...callbacks), this;
+    }
 
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-};
+  });
 
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
-process.umask = function() { return 0; };
+  function pipeline(...args) {
+    const context = {
+      self: this,
+      index: 0
+    };
 
-},{}],2:[function(require,module,exports){
+    function next() {
+      const method = middleware[context.index++];
+
+      if (method) {
+        return method.call(context.self, args, next);
+      } else if (done) {
+        return done.apply(context.self, args);
+      }
+    }
+
+    return next();
+  }
+
+  return pipeline;
+}
+
+function plugin(target, ...sources) {
+  for (const source of sources) {
+    for (const [property, method] of Object.entries(source)) {
+      if (typeof method !== 'function') continue;
+
+      if (!target[property]) {
+        target[property] = middleware();
+      } else if (!target[property].use) {
+        target[property] = middleware(target[property]);
+      }
+
+      target[property].use(method);
+    }
+  }
+
+  return target;
+}
+
+function transfer(target, ...sources) {
+  for (const source of sources) {
+    const properties = Object.getOwnPropertyDescriptors(source);
+
+    for (const [name, descriptor] of Object.entries(properties)) {
+      if (name === 'prototype') {
+        transfer(target.prototype, source.prototype);
+      }
+
+      if (descriptor.configurable) {
+        Object.defineProperty(target, name, descriptor);
+      }
+    }
+  }
+}
+
+},{}],8:[function(require,module,exports){
 'use strict';
 var token = '%[a-f0-9]{2}';
 var singleMatcher = new RegExp(token, 'gi');
@@ -280,7 +474,7 @@ module.exports = function (encodedURI) {
 	}
 };
 
-},{}],3:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 'use strict';
 const { Map, WeakMap } = require('../shared/poorlyfills.js');
 
@@ -437,7 +631,7 @@ const setValue = (self, secret, value) =>
   })[secret]
 ;
 
-},{"../shared/poorlyfills.js":16}],4:[function(require,module,exports){
+},{"../shared/poorlyfills.js":22}],10:[function(require,module,exports){
 'use strict';
 const { append } = require('../shared/utils.js');
 const { doc, fragment } = require('../shared/easy-dom.js');
@@ -472,7 +666,7 @@ Wire.prototype.remove = function remove() {
   return first;
 };
 
-},{"../shared/easy-dom.js":14,"../shared/utils.js":18}],5:[function(require,module,exports){
+},{"../shared/easy-dom.js":20,"../shared/utils.js":24}],11:[function(require,module,exports){
 'use strict';
 const {Map, WeakMap} = require('../shared/poorlyfills.js');
 const {G, UIDC, VOID_ELEMENTS} = require('../shared/constants.js');
@@ -554,7 +748,7 @@ const SC_PLACE = ($0, $1, $2) => {
 
 Object.defineProperty(exports, '__esModule', {value: true}).default = render;
 
-},{"../objects/Updates.js":11,"../shared/constants.js":12,"../shared/poorlyfills.js":16,"../shared/re.js":17,"../shared/utils.js":18}],6:[function(require,module,exports){
+},{"../objects/Updates.js":17,"../shared/constants.js":18,"../shared/poorlyfills.js":22,"../shared/re.js":23,"../shared/utils.js":24}],12:[function(require,module,exports){
 'use strict';
 const {ELEMENT_NODE, SVG_NAMESPACE} = require('../shared/constants.js');
 const {WeakMap, trim} = require('../shared/poorlyfills.js');
@@ -654,7 +848,7 @@ exports.content = content;
 exports.weakly = weakly;
 Object.defineProperty(exports, '__esModule', {value: true}).default = wire;
 
-},{"../classes/Wire.js":4,"../shared/constants.js":12,"../shared/easy-dom.js":14,"../shared/poorlyfills.js":16,"../shared/utils.js":18,"./render.js":5}],7:[function(require,module,exports){
+},{"../classes/Wire.js":10,"../shared/constants.js":18,"../shared/easy-dom.js":20,"../shared/poorlyfills.js":22,"../shared/utils.js":24,"./render.js":11}],13:[function(require,module,exports){
 'use strict';
 /*! (c) Andrea Giammarchi (ISC) */
 
@@ -716,7 +910,7 @@ function hyper(HTML) {
 }
 Object.defineProperty(exports, '__esModule', {value: true}).default = hyper
 
-},{"./classes/Component.js":3,"./hyper/render.js":5,"./hyper/wire.js":6,"./objects/Intent.js":8,"./shared/domdiff.js":13}],8:[function(require,module,exports){
+},{"./classes/Component.js":9,"./hyper/render.js":11,"./hyper/wire.js":12,"./objects/Intent.js":14,"./shared/domdiff.js":19}],14:[function(require,module,exports){
 'use strict';
 const attributes = {};
 const intents = {};
@@ -758,7 +952,7 @@ Object.defineProperty(exports, '__esModule', {value: true}).default = {
   }
 };
 
-},{}],9:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 'use strict';
 const {
   COMMENT_NODE,
@@ -818,7 +1012,7 @@ Object.defineProperty(exports, '__esModule', {value: true}).default = {
   }
 }
 
-},{"../shared/constants.js":12}],10:[function(require,module,exports){
+},{"../shared/constants.js":18}],16:[function(require,module,exports){
 'use strict';
 // from https://github.com/developit/preact/blob/33fc697ac11762a1cb6e71e9847670d047af7ce5/src/constants.js
 const IS_NON_DIMENSIONAL = /acit|ex(?:s|g|n|p|$)|rph|ows|mnc|ntw|ine[ch]|zoo|^ord/i;
@@ -891,7 +1085,7 @@ const toStyle = object => {
   }
   return css.join('');
 };
-},{}],11:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 'use strict';
 const {
   CONNECTED, DISCONNECTED, COMMENT_NODE, DOCUMENT_FRAGMENT_NODE, ELEMENT_NODE, TEXT_NODE, OWNER_SVG_ELEMENT, SHOULD_USE_TEXT_CONTENT, UID, UIDC
@@ -1415,7 +1609,7 @@ function observe() {
   }
 }
 
-},{"../classes/Component.js":3,"../classes/Wire.js":4,"../shared/constants.js":12,"../shared/domdiff.js":13,"../shared/easy-dom.js":14,"../shared/poorlyfills.js":16,"../shared/utils.js":18,"./Intent.js":8,"./Path.js":9,"./Style.js":10}],12:[function(require,module,exports){
+},{"../classes/Component.js":9,"../classes/Wire.js":10,"../shared/constants.js":18,"../shared/domdiff.js":19,"../shared/easy-dom.js":20,"../shared/poorlyfills.js":22,"../shared/utils.js":24,"./Intent.js":14,"./Path.js":15,"./Style.js":16}],18:[function(require,module,exports){
 'use strict';
 const G = document.defaultView;
 exports.G = G;
@@ -1460,7 +1654,7 @@ exports.UID = UID;
 const UIDC = '<!--' + UID + '-->';
 exports.UIDC = UIDC;
 
-},{}],13:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 'use strict';
 /* AUTOMATICALLY IMPORTED, DO NOT MODIFY */
 /*! (c) 2017 Andrea Giammarchi (ISC) */
@@ -1624,7 +1818,7 @@ const domdiff = (
 
 Object.defineProperty(exports, '__esModule', {value: true}).default = domdiff;
 
-},{}],14:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 'use strict';
 // these are tiny helpers to simplify most common operations needed here
 const create = (node, type) => doc(node).createElement(type);
@@ -1636,7 +1830,7 @@ exports.fragment = fragment;
 const text = (node, text) => doc(node).createTextNode(text);
 exports.text = text;
 
-},{}],15:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 'use strict';
 const {create, fragment, text} = require('./easy-dom.js');
 
@@ -1663,7 +1857,7 @@ exports.hasDoomedCloneNode = hasDoomedCloneNode;
 const hasImportNode = 'importNode' in document;
 exports.hasImportNode = hasImportNode;
 
-},{"./easy-dom.js":14}],16:[function(require,module,exports){
+},{"./easy-dom.js":20}],22:[function(require,module,exports){
 'use strict';
 const {G, UID} = require('./constants.js');
 
@@ -1737,7 +1931,7 @@ const trim = UID.trim || function () {
 };
 exports.trim = trim;
 
-},{"./constants.js":12}],17:[function(require,module,exports){
+},{"./constants.js":18}],23:[function(require,module,exports){
 'use strict';
 // TODO:  I'd love to code-cover RegExp too here
 //        these are fundamental for this library
@@ -1762,7 +1956,7 @@ exports.attrName = attrName;
 exports.attrSeeker = attrSeeker;
 exports.selfClosing = selfClosing;
 
-},{}],18:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 'use strict';
 const {attrName, attrSeeker} = require('./re.js');
 
@@ -1969,1134 +2163,7 @@ const SVGFragment = hasContent ?
     return content;
   };
 
-},{"./constants.js":12,"./easy-dom.js":14,"./features-detection.js":15,"./poorlyfills.js":16,"./re.js":17}],19:[function(require,module,exports){
-'use strict';
-const strictUriEncode = require('strict-uri-encode');
-const decodeComponent = require('decode-uri-component');
-
-function encoderForArrayFormat(options) {
-	switch (options.arrayFormat) {
-		case 'index':
-			return (key, value, index) => {
-				return value === null ? [
-					encode(key, options),
-					'[',
-					index,
-					']'
-				].join('') : [
-					encode(key, options),
-					'[',
-					encode(index, options),
-					']=',
-					encode(value, options)
-				].join('');
-			};
-		case 'bracket':
-			return (key, value) => {
-				return value === null ? [encode(key, options), '[]'].join('') : [
-					encode(key, options),
-					'[]=',
-					encode(value, options)
-				].join('');
-			};
-		default:
-			return (key, value) => {
-				return value === null ? encode(key, options) : [
-					encode(key, options),
-					'=',
-					encode(value, options)
-				].join('');
-			};
-	}
-}
-
-function parserForArrayFormat(options) {
-	let result;
-
-	switch (options.arrayFormat) {
-		case 'index':
-			return (key, value, accumulator) => {
-				result = /\[(\d*)\]$/.exec(key);
-
-				key = key.replace(/\[\d*\]$/, '');
-
-				if (!result) {
-					accumulator[key] = value;
-					return;
-				}
-
-				if (accumulator[key] === undefined) {
-					accumulator[key] = {};
-				}
-
-				accumulator[key][result[1]] = value;
-			};
-		case 'bracket':
-			return (key, value, accumulator) => {
-				result = /(\[\])$/.exec(key);
-				key = key.replace(/\[\]$/, '');
-
-				if (!result) {
-					accumulator[key] = value;
-					return;
-				}
-
-				if (accumulator[key] === undefined) {
-					accumulator[key] = [value];
-					return;
-				}
-
-				accumulator[key] = [].concat(accumulator[key], value);
-			};
-		default:
-			return (key, value, accumulator) => {
-				if (accumulator[key] === undefined) {
-					accumulator[key] = value;
-					return;
-				}
-
-				accumulator[key] = [].concat(accumulator[key], value);
-			};
-	}
-}
-
-function encode(value, options) {
-	if (options.encode) {
-		return options.strict ? strictUriEncode(value) : encodeURIComponent(value);
-	}
-
-	return value;
-}
-
-function decode(value, options) {
-	if (options.decode) {
-		return decodeComponent(value);
-	}
-
-	return value;
-}
-
-function keysSorter(input) {
-	if (Array.isArray(input)) {
-		return input.sort();
-	}
-
-	if (typeof input === 'object') {
-		return keysSorter(Object.keys(input))
-			.sort((a, b) => Number(a) - Number(b))
-			.map(key => input[key]);
-	}
-
-	return input;
-}
-
-function extract(input) {
-	const queryStart = input.indexOf('?');
-	if (queryStart === -1) {
-		return '';
-	}
-
-	return input.slice(queryStart + 1);
-}
-
-function parse(input, options) {
-	options = Object.assign({decode: true, arrayFormat: 'none'}, options);
-
-	const formatter = parserForArrayFormat(options);
-
-	// Create an object with no prototype
-	const ret = Object.create(null);
-
-	if (typeof input !== 'string') {
-		return ret;
-	}
-
-	input = input.trim().replace(/^[?#&]/, '');
-
-	if (!input) {
-		return ret;
-	}
-
-	for (const param of input.split('&')) {
-		let [key, value] = param.replace(/\+/g, ' ').split('=');
-
-		// Missing `=` should be `null`:
-		// http://w3.org/TR/2012/WD-url-20120524/#collect-url-parameters
-		value = value === undefined ? null : decode(value, options);
-
-		formatter(decode(key, options), value, ret);
-	}
-
-	return Object.keys(ret).sort().reduce((result, key) => {
-		const value = ret[key];
-		if (Boolean(value) && typeof value === 'object' && !Array.isArray(value)) {
-			// Sort object keys, not values
-			result[key] = keysSorter(value);
-		} else {
-			result[key] = value;
-		}
-
-		return result;
-	}, Object.create(null));
-}
-
-exports.extract = extract;
-exports.parse = parse;
-
-exports.stringify = (obj, options) => {
-	if (!obj) {
-		return '';
-	}
-
-	options = Object.assign({
-		encode: true,
-		strict: true,
-		arrayFormat: 'none'
-	}, options);
-
-	const formatter = encoderForArrayFormat(options);
-	const keys = Object.keys(obj);
-
-	if (options.sort !== false) {
-		keys.sort(options.sort);
-	}
-
-	return keys.map(key => {
-		const value = obj[key];
-
-		if (value === undefined) {
-			return '';
-		}
-
-		if (value === null) {
-			return encode(key, options);
-		}
-
-		if (Array.isArray(value)) {
-			const result = [];
-
-			for (const value2 of value.slice()) {
-				if (value2 === undefined) {
-					continue;
-				}
-
-				result.push(formatter(key, value2, result.length));
-			}
-
-			return result.join('&');
-		}
-
-		return encode(key, options) + '=' + encode(value, options);
-	}).filter(x => x.length > 0).join('&');
-};
-
-exports.parseUrl = (input, options) => {
-	const hashStart = input.indexOf('#');
-	if (hashStart !== -1) {
-		input = input.slice(0, hashStart);
-	}
-
-	return {
-		url: input.split('?')[0] || '',
-		query: parse(extract(input), options)
-	};
-};
-
-},{"decode-uri-component":2,"strict-uri-encode":20}],20:[function(require,module,exports){
-'use strict';
-module.exports = str => encodeURIComponent(str).replace(/[!'()*]/g, x => `%${x.charCodeAt(0).toString(16).toUpperCase()}`);
-
-},{}],21:[function(require,module,exports){
-"use strict";
-
-function _typeof2(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof2 = function _typeof2(obj) { return typeof obj; }; } else { _typeof2 = function _typeof2(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof2(obj); }
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _widgets = require("@scoutgg/widgets");
-
-var _hyperhtml = require("hyperhtml");
-
-var _widgetsRouter = require("widgets-router");
-
-var _auth = require("../../services/auth");
-
-require("../button/button");
-
-var _dec, _dec2, _dec3, _class;
-
-function _typeof(obj) {
-  if (typeof Symbol === "function" && _typeof2(Symbol.iterator) === "symbol") {
-    _typeof = function _typeof(obj) {
-      return _typeof2(obj);
-    };
-  } else {
-    _typeof = function _typeof(obj) {
-      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : _typeof2(obj);
-    };
-  }
-
-  return _typeof(obj);
-}
-
-function _classCallCheck(instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-}
-
-function _defineProperties(target, props) {
-  for (var i = 0; i < props.length; i++) {
-    var descriptor = props[i];
-    descriptor.enumerable = descriptor.enumerable || false;
-    descriptor.configurable = true;
-    if ("value" in descriptor) descriptor.writable = true;
-    Object.defineProperty(target, descriptor.key, descriptor);
-  }
-}
-
-function _createClass(Constructor, protoProps, staticProps) {
-  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
-  if (staticProps) _defineProperties(Constructor, staticProps);
-  return Constructor;
-}
-
-function _possibleConstructorReturn(self, call) {
-  if (call && (_typeof(call) === "object" || typeof call === "function")) {
-    return call;
-  }
-
-  return _assertThisInitialized(self);
-}
-
-function _assertThisInitialized(self) {
-  if (self === void 0) {
-    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-  }
-
-  return self;
-}
-
-function _inherits(subClass, superClass) {
-  if (typeof superClass !== "function" && superClass !== null) {
-    throw new TypeError("Super expression must either be null or a function");
-  }
-
-  subClass.prototype = Object.create(superClass && superClass.prototype, {
-    constructor: {
-      value: subClass,
-      writable: true,
-      configurable: true
-    }
-  });
-  if (superClass) _setPrototypeOf(subClass, superClass);
-}
-
-function _wrapNativeSuper(Class) {
-  var _cache = typeof Map === "function" ? new Map() : undefined;
-
-  _wrapNativeSuper = function _wrapNativeSuper(Class) {
-    if (Class === null || !_isNativeFunction(Class)) return Class;
-
-    if (typeof Class !== "function") {
-      throw new TypeError("Super expression must either be null or a function");
-    }
-
-    if (typeof _cache !== "undefined") {
-      if (_cache.has(Class)) return _cache.get(Class);
-
-      _cache.set(Class, Wrapper);
-    }
-
-    function Wrapper() {
-      return _construct(Class, arguments, _getPrototypeOf(this).constructor);
-    }
-
-    Wrapper.prototype = Object.create(Class.prototype, {
-      constructor: {
-        value: Wrapper,
-        enumerable: false,
-        writable: true,
-        configurable: true
-      }
-    });
-    return _setPrototypeOf(Wrapper, Class);
-  };
-
-  return _wrapNativeSuper(Class);
-}
-
-function isNativeReflectConstruct() {
-  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-  if (Reflect.construct.sham) return false;
-  if (typeof Proxy === "function") return true;
-
-  try {
-    Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-function _construct(Parent, args, Class) {
-  if (isNativeReflectConstruct()) {
-    _construct = Reflect.construct;
-  } else {
-    _construct = function _construct(Parent, args, Class) {
-      var a = [null];
-      a.push.apply(a, args);
-      var Constructor = Function.bind.apply(Parent, a);
-      var instance = new Constructor();
-      if (Class) _setPrototypeOf(instance, Class.prototype);
-      return instance;
-    };
-  }
-
-  return _construct.apply(null, arguments);
-}
-
-function _isNativeFunction(fn) {
-  return Function.toString.call(fn).indexOf("[native code]") !== -1;
-}
-
-function _setPrototypeOf(o, p) {
-  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
-    o.__proto__ = p;
-    return o;
-  };
-
-  return _setPrototypeOf(o, p);
-}
-
-function _getPrototypeOf(o) {
-  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
-    return o.__proto__ || Object.getPrototypeOf(o);
-  };
-  return _getPrototypeOf(o);
-}
-
-function _templateObject2() {
-  var data = _taggedTemplateLiteral(["\n        <h1>Welcome ", "</h1>\n      "]);
-
-  _templateObject2 = function _templateObject2() {
-    return data;
-  };
-
-  return data;
-}
-
-function _templateObject() {
-  var data = _taggedTemplateLiteral(["\n    <style>\n      :host {\n        display: flex;\n        flex-direction: column;\n        align-items: center;\n        justify-content: center;\n        min-height: 100vh;\n        width: 100vw;\n        background: url('/assets/images/bg-large.jpg');\n        background-size: cover;\n        background-position: center;\n      }\n      .untappd {\n        --button-color: #fff;\n        --button-background: var(--untappd-color);\n        --button-font-weight: 800;\n        font-size: 1.5em;\n        filter: drop-shadow(2px 1px 2px rgba(0, 0, 0, .5));\n      }\n      .untappd img {\n        max-height: 1.5em;\n        margin-right: .5em;\n      }\n    </style>\n    ", "\n    <beer-button class=\"untappd\" href=\"/auth\">\n      <img src=\"/assets/images/untappd-logo.jpg\" alt=\"Untappd logo\" />\n      Sign in with Untappd\n    </beer-button>\n  "]);
-
-  _templateObject = function _templateObject() {
-    return data;
-  };
-
-  return data;
-}
-
-function _taggedTemplateLiteral(strings, raw) {
-  if (!raw) {
-    raw = strings.slice(0);
-  }
-
-  return Object.freeze(Object.defineProperties(strings, {
-    raw: {
-      value: Object.freeze(raw)
-    }
-  }));
-}
-
-var Auth = (_dec = (0, _widgetsRouter.Route)('/login'), _dec2 = (0, _widgets.Component)('beer'), _dec3 = (0, _widgets.Template)(function (html) {
-  html(_templateObject(), this.user ? (0, _hyperhtml.wire)()(_templateObject2(), this.user.username) : '');
-}), _dec(_class = _dec2(_class = _dec3(_class =
-/*#__PURE__*/
-function (_HTMLElement) {
-  _inherits(Auth, _HTMLElement);
-
-  function Auth() {
-    _classCallCheck(this, Auth);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(Auth).apply(this, arguments));
-  }
-
-  _createClass(Auth, [{
-    key: "connectedCallback",
-    value: function connectedCallback() {}
-  }, {
-    key: "user",
-    get: function get() {
-      return (0, _auth.current)();
-    }
-  }]);
-
-  return Auth;
-}(_wrapNativeSuper(HTMLElement))) || _class) || _class) || _class);
-exports.default = Auth;
-
-},{"../../services/auth":25,"../button/button":22,"@scoutgg/widgets":34,"hyperhtml":7,"widgets-router":28}],22:[function(require,module,exports){
-"use strict";
-
-function _typeof2(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof2 = function _typeof2(obj) { return typeof obj; }; } else { _typeof2 = function _typeof2(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof2(obj); }
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _widgets = require("@scoutgg/widgets");
-
-var _widgetsRouter = require("widgets-router");
-
-var _dec, _dec2, _dec3, _class;
-
-function _typeof(obj) {
-  if (typeof Symbol === "function" && _typeof2(Symbol.iterator) === "symbol") {
-    _typeof = function _typeof(obj) {
-      return _typeof2(obj);
-    };
-  } else {
-    _typeof = function _typeof(obj) {
-      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : _typeof2(obj);
-    };
-  }
-
-  return _typeof(obj);
-}
-
-function _classCallCheck(instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-}
-
-function _possibleConstructorReturn(self, call) {
-  if (call && (_typeof(call) === "object" || typeof call === "function")) {
-    return call;
-  }
-
-  return _assertThisInitialized(self);
-}
-
-function _assertThisInitialized(self) {
-  if (self === void 0) {
-    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-  }
-
-  return self;
-}
-
-function _inherits(subClass, superClass) {
-  if (typeof superClass !== "function" && superClass !== null) {
-    throw new TypeError("Super expression must either be null or a function");
-  }
-
-  subClass.prototype = Object.create(superClass && superClass.prototype, {
-    constructor: {
-      value: subClass,
-      writable: true,
-      configurable: true
-    }
-  });
-  if (superClass) _setPrototypeOf(subClass, superClass);
-}
-
-function _wrapNativeSuper(Class) {
-  var _cache = typeof Map === "function" ? new Map() : undefined;
-
-  _wrapNativeSuper = function _wrapNativeSuper(Class) {
-    if (Class === null || !_isNativeFunction(Class)) return Class;
-
-    if (typeof Class !== "function") {
-      throw new TypeError("Super expression must either be null or a function");
-    }
-
-    if (typeof _cache !== "undefined") {
-      if (_cache.has(Class)) return _cache.get(Class);
-
-      _cache.set(Class, Wrapper);
-    }
-
-    function Wrapper() {
-      return _construct(Class, arguments, _getPrototypeOf(this).constructor);
-    }
-
-    Wrapper.prototype = Object.create(Class.prototype, {
-      constructor: {
-        value: Wrapper,
-        enumerable: false,
-        writable: true,
-        configurable: true
-      }
-    });
-    return _setPrototypeOf(Wrapper, Class);
-  };
-
-  return _wrapNativeSuper(Class);
-}
-
-function isNativeReflectConstruct() {
-  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-  if (Reflect.construct.sham) return false;
-  if (typeof Proxy === "function") return true;
-
-  try {
-    Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-function _construct(Parent, args, Class) {
-  if (isNativeReflectConstruct()) {
-    _construct = Reflect.construct;
-  } else {
-    _construct = function _construct(Parent, args, Class) {
-      var a = [null];
-      a.push.apply(a, args);
-      var Constructor = Function.bind.apply(Parent, a);
-      var instance = new Constructor();
-      if (Class) _setPrototypeOf(instance, Class.prototype);
-      return instance;
-    };
-  }
-
-  return _construct.apply(null, arguments);
-}
-
-function _isNativeFunction(fn) {
-  return Function.toString.call(fn).indexOf("[native code]") !== -1;
-}
-
-function _setPrototypeOf(o, p) {
-  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
-    o.__proto__ = p;
-    return o;
-  };
-
-  return _setPrototypeOf(o, p);
-}
-
-function _getPrototypeOf(o) {
-  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
-    return o.__proto__ || Object.getPrototypeOf(o);
-  };
-  return _getPrototypeOf(o);
-}
-
-function _templateObject() {
-  var data = _taggedTemplateLiteral(["\n    <style>\n      a {\n        display: inline-flex;\n        align-items: center;\n        padding: var(--button-padding, .5em 1em);\n        background: var(--button-background, var(--accent-color));\n        color: var(--button-color, var(--accent-text));\n        border-radius: var(--button-radius, 2em);\n        font-weight: var(--button-font-weight, inherit);\n        text-decoration: none;\n      }\n    </style>\n    <a href=", "><slot></slot></a>\n  "]);
-
-  _templateObject = function _templateObject() {
-    return data;
-  };
-
-  return data;
-}
-
-function _taggedTemplateLiteral(strings, raw) {
-  if (!raw) {
-    raw = strings.slice(0);
-  }
-
-  return Object.freeze(Object.defineProperties(strings, {
-    raw: {
-      value: Object.freeze(raw)
-    }
-  }));
-}
-
-var Button = (_dec = (0, _widgets.Component)('beer'), _dec2 = (0, _widgets.Attribute)('href', String, {
-  default: 'javascript:void()'
-}), _dec3 = (0, _widgets.Template)(function (html) {
-  html(_templateObject(), this.href);
-}), _dec(_class = _dec2(_class = _dec3(_class =
-/*#__PURE__*/
-function (_HTMLElement) {
-  _inherits(Button, _HTMLElement);
-
-  function Button() {
-    _classCallCheck(this, Button);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(Button).apply(this, arguments));
-  }
-
-  return Button;
-}(_wrapNativeSuper(HTMLElement))) || _class) || _class) || _class);
-exports.default = Button;
-
-},{"@scoutgg/widgets":34,"widgets-router":28}],23:[function(require,module,exports){
-"use strict";
-
-function _typeof2(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof2 = function _typeof2(obj) { return typeof obj; }; } else { _typeof2 = function _typeof2(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof2(obj); }
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _widgets = require("@scoutgg/widgets");
-
-var _auth = require("../../services/auth");
-
-var _widgetsRouter = require("widgets-router");
-
-var _dec, _dec2, _dec3, _class;
-
-function _typeof(obj) {
-  if (typeof Symbol === "function" && _typeof2(Symbol.iterator) === "symbol") {
-    _typeof = function _typeof(obj) {
-      return _typeof2(obj);
-    };
-  } else {
-    _typeof = function _typeof(obj) {
-      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : _typeof2(obj);
-    };
-  }
-
-  return _typeof(obj);
-}
-
-function _classCallCheck(instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-}
-
-function _defineProperties(target, props) {
-  for (var i = 0; i < props.length; i++) {
-    var descriptor = props[i];
-    descriptor.enumerable = descriptor.enumerable || false;
-    descriptor.configurable = true;
-    if ("value" in descriptor) descriptor.writable = true;
-    Object.defineProperty(target, descriptor.key, descriptor);
-  }
-}
-
-function _createClass(Constructor, protoProps, staticProps) {
-  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
-  if (staticProps) _defineProperties(Constructor, staticProps);
-  return Constructor;
-}
-
-function _possibleConstructorReturn(self, call) {
-  if (call && (_typeof(call) === "object" || typeof call === "function")) {
-    return call;
-  }
-
-  return _assertThisInitialized(self);
-}
-
-function _assertThisInitialized(self) {
-  if (self === void 0) {
-    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-  }
-
-  return self;
-}
-
-function _inherits(subClass, superClass) {
-  if (typeof superClass !== "function" && superClass !== null) {
-    throw new TypeError("Super expression must either be null or a function");
-  }
-
-  subClass.prototype = Object.create(superClass && superClass.prototype, {
-    constructor: {
-      value: subClass,
-      writable: true,
-      configurable: true
-    }
-  });
-  if (superClass) _setPrototypeOf(subClass, superClass);
-}
-
-function _wrapNativeSuper(Class) {
-  var _cache = typeof Map === "function" ? new Map() : undefined;
-
-  _wrapNativeSuper = function _wrapNativeSuper(Class) {
-    if (Class === null || !_isNativeFunction(Class)) return Class;
-
-    if (typeof Class !== "function") {
-      throw new TypeError("Super expression must either be null or a function");
-    }
-
-    if (typeof _cache !== "undefined") {
-      if (_cache.has(Class)) return _cache.get(Class);
-
-      _cache.set(Class, Wrapper);
-    }
-
-    function Wrapper() {
-      return _construct(Class, arguments, _getPrototypeOf(this).constructor);
-    }
-
-    Wrapper.prototype = Object.create(Class.prototype, {
-      constructor: {
-        value: Wrapper,
-        enumerable: false,
-        writable: true,
-        configurable: true
-      }
-    });
-    return _setPrototypeOf(Wrapper, Class);
-  };
-
-  return _wrapNativeSuper(Class);
-}
-
-function isNativeReflectConstruct() {
-  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-  if (Reflect.construct.sham) return false;
-  if (typeof Proxy === "function") return true;
-
-  try {
-    Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-function _construct(Parent, args, Class) {
-  if (isNativeReflectConstruct()) {
-    _construct = Reflect.construct;
-  } else {
-    _construct = function _construct(Parent, args, Class) {
-      var a = [null];
-      a.push.apply(a, args);
-      var Constructor = Function.bind.apply(Parent, a);
-      var instance = new Constructor();
-      if (Class) _setPrototypeOf(instance, Class.prototype);
-      return instance;
-    };
-  }
-
-  return _construct.apply(null, arguments);
-}
-
-function _isNativeFunction(fn) {
-  return Function.toString.call(fn).indexOf("[native code]") !== -1;
-}
-
-function _setPrototypeOf(o, p) {
-  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
-    o.__proto__ = p;
-    return o;
-  };
-
-  return _setPrototypeOf(o, p);
-}
-
-function _getPrototypeOf(o) {
-  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
-    return o.__proto__ || Object.getPrototypeOf(o);
-  };
-  return _getPrototypeOf(o);
-}
-
-function _templateObject() {
-  var data = _taggedTemplateLiteral(["\n    <h1>Hello ", "</h1>\n    <h1>\u2615Fresh new component \xABwelcome\xBB</h1>\n  "]);
-
-  _templateObject = function _templateObject() {
-    return data;
-  };
-
-  return data;
-}
-
-function _taggedTemplateLiteral(strings, raw) {
-  if (!raw) {
-    raw = strings.slice(0);
-  }
-
-  return Object.freeze(Object.defineProperties(strings, {
-    raw: {
-      value: Object.freeze(raw)
-    }
-  }));
-}
-
-var Welcome = (_dec = (0, _widgetsRouter.Route)('/welcome'), _dec2 = (0, _widgets.Component)('demo'), _dec3 = (0, _widgets.Template)(function (html) {
-  html(_templateObject(), this.user.username);
-}), _dec(_class = _dec2(_class = _dec3(_class =
-/*#__PURE__*/
-function (_HTMLElement) {
-  _inherits(Welcome, _HTMLElement);
-
-  function Welcome() {
-    _classCallCheck(this, Welcome);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(Welcome).apply(this, arguments));
-  }
-
-  _createClass(Welcome, [{
-    key: "user",
-    get: function get() {
-      return (0, _auth.current)();
-    }
-  }]);
-
-  return Welcome;
-}(_wrapNativeSuper(HTMLElement))) || _class) || _class) || _class);
-exports.default = Welcome;
-
-},{"../../services/auth":25,"@scoutgg/widgets":34,"widgets-router":28}],24:[function(require,module,exports){
-"use strict";
-
-var _widgets = require("@scoutgg/widgets");
-
-var _hyper = require("@scoutgg/widgets/cjs/renderers/hyper");
-
-var _widgetsRouter = require("widgets-router");
-
-var _queryString = _interopRequireDefault(require("query-string"));
-
-var _hyperhtml = _interopRequireDefault(require("hyperhtml"));
-
-var _auth = require("./services/auth");
-
-require("./components/welcome/welcome");
-
-require("./components/auth/auth");
-
-function _interopRequireDefault(obj) {
-  return obj && obj.__esModule ? obj : {
-    default: obj
-  };
-} // Import the components you want to use
-// Middleware to check if we have received a token
-
-
-(0, _widgetsRouter.router)('/', function (context, next) {
-  console.log('hit');
-
-  var token = _queryString.default.parse(window.location.search).token;
-
-  if (token || localStorage.beerToken) {
-    (0, _auth.login)(token);
-    (0, _widgetsRouter.router)('/welcome');
-  }
-
-  if (!localStorage.beerToken) _widgetsRouter.router.redirect('/login');
-}); // Bootstrap Widgets (Start it)
-
-(0, _widgets.bootstrap)([(0, _hyper.hyper)(_hyperhtml.default)]);
-
-},{"./components/auth/auth":21,"./components/welcome/welcome":23,"./services/auth":25,"@scoutgg/widgets":34,"@scoutgg/widgets/cjs/renderers/hyper":35,"hyperhtml":7,"query-string":19,"widgets-router":28}],25:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.login = login;
-exports.current = current;
-exports.logout = logout;
-
-function login(token) {
-  localStorage.beerToken = token;
-  return token;
-}
-
-function current() {
-  if (!localStorage.beerToken) return;
-
-  try {
-    return JSON.parse(atob(localStorage.beerToken.split('.')[1]));
-  } catch (e) {
-    return;
-  }
-}
-
-function logout() {
-  delete localStorage.beerToken; // Consider using a router to do this redirect for best user experience
-
-  window.location = '/';
-}
-
-},{}],26:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.PageRouter = void 0;
-
-var _widgets = require("@scoutgg/widgets");
-
-var _component = require("@scoutgg/widgets/cjs/decorators/component");
-
-var _decorator = require("./decorator");
-
-var _page = _interopRequireDefault(require("page"));
-
-var _dec, _dec2, _class;
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _wrapNativeSuper(Class) { var _cache = typeof Map === "function" ? new Map() : undefined; _wrapNativeSuper = function _wrapNativeSuper(Class) { if (Class === null || !_isNativeFunction(Class)) return Class; if (typeof Class !== "function") { throw new TypeError("Super expression must either be null or a function"); } if (typeof _cache !== "undefined") { if (_cache.has(Class)) return _cache.get(Class); _cache.set(Class, Wrapper); } function Wrapper() { return _construct(Class, arguments, _getPrototypeOf(this).constructor); } Wrapper.prototype = Object.create(Class.prototype, { constructor: { value: Wrapper, enumerable: false, writable: true, configurable: true } }); return _setPrototypeOf(Wrapper, Class); }; return _wrapNativeSuper(Class); }
-
-function isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
-
-function _construct(Parent, args, Class) { if (isNativeReflectConstruct()) { _construct = Reflect.construct; } else { _construct = function _construct(Parent, args, Class) { var a = [null]; a.push.apply(a, args); var Constructor = Function.bind.apply(Parent, a); var instance = new Constructor(); if (Class) _setPrototypeOf(instance, Class.prototype); return instance; }; } return _construct.apply(null, arguments); }
-
-function _isNativeFunction(fn) { return Function.toString.call(fn).indexOf("[native code]") !== -1; }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _templateObject() {
-  var data = _taggedTemplateLiteral(["", ""]);
-
-  _templateObject = function _templateObject() {
-    return data;
-  };
-
-  return data;
-}
-
-function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
-
-var PageRouter = (_dec = (0, _widgets.Component)('ang'), _dec2 = (0, _widgets.Template)(function (html) {
-  html(_templateObject(), this.route);
-}), _dec(_class = _dec2(_class =
-/*#__PURE__*/
-function (_HTMLElement) {
-  _inherits(PageRouter, _HTMLElement);
-
-  function PageRouter() {
-    _classCallCheck(this, PageRouter);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(PageRouter).apply(this, arguments));
-  }
-
-  _createClass(PageRouter, [{
-    key: "connectedCallback",
-    value: function connectedCallback() {
-      var _this = this;
-
-      this.route = '';
-
-      _decorator.routes.forEach(function (route) {
-        (0, _page.default)(route.route, function (context, next) {
-          var elem = document.createElement((0, _component.getTagName)(route.self));
-          Object.keys(context.params).forEach(function (attribute) {
-            if (!isNaN(attribute)) return;
-            elem.setAttribute(attribute, context.params[attribute]);
-          });
-          _this.route = elem;
-
-          _this.render(function () {
-            _this.emit('routeChanged', {
-              context: context
-            });
-          });
-        });
-      });
-
-      (0, _page.default)();
-      var pathname = window.location.hash.slice(1);
-      if (pathname) (0, _page.default)(pathname);
-    }
-  }]);
-
-  return PageRouter;
-}(_wrapNativeSuper(HTMLElement))) || _class) || _class);
-exports.PageRouter = PageRouter;
-},{"./decorator":27,"@scoutgg/widgets":34,"@scoutgg/widgets/cjs/decorators/component":32,"page":30}],27:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.Route = Route;
-exports.routes = void 0;
-var routes = new Set();
-exports.routes = routes;
-
-function Route(route, element) {
-  return function run(self) {
-    routes.add({
-      route: route,
-      self: self
-    });
-    console.log('Route decorator ran', self);
-  };
-}
-},{}],28:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-Object.defineProperty(exports, "PageRouter", {
-  enumerable: true,
-  get: function get() {
-    return _component.PageRouter;
-  }
-});
-Object.defineProperty(exports, "Route", {
-  enumerable: true,
-  get: function get() {
-    return _decorator.Route;
-  }
-});
-Object.defineProperty(exports, "routes", {
-  enumerable: true,
-  get: function get() {
-    return _decorator.routes;
-  }
-});
-Object.defineProperty(exports, "router", {
-  enumerable: true,
-  get: function get() {
-    return _router.page;
-  }
-});
-
-var _component = require("./component");
-
-var _decorator = require("./decorator");
-
-var _router = require("./router");
-},{"./component":26,"./decorator":27,"./router":29}],29:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-Object.defineProperty(exports, "page", {
-  enumerable: true,
-  get: function get() {
-    return _page.default;
-  }
-});
-
-var _decorator = require("./decorator");
-
-var _page = _interopRequireDefault(require("page"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-},{"./decorator":27,"page":30}],30:[function(require,module,exports){
+},{"./constants.js":18,"./easy-dom.js":20,"./features-detection.js":21,"./poorlyfills.js":22,"./re.js":23}],25:[function(require,module,exports){
 (function (process){
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
@@ -4293,384 +3360,1317 @@ return page_js;
 })));
 
 }).call(this,require('_process'))
-},{"_process":1}],31:[function(require,module,exports){
-"use strict";
+},{"_process":26}],26:[function(require,module,exports){
+// shim for using process in browser
+var process = module.exports = {};
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.Attribute = Attribute;
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
 
-var _utils = require("../utils.js");
+var cachedSetTimeout;
+var cachedClearTimeout;
 
-function Attribute(name, type, options = {
-  default: ''
-}) {
-  const property = (0, _utils.camelCase)(name);
-  const attribute = (0, _utils.kebabCase)(name);
-  return function define(Class) {
-    if (!Class.observedAttributes) {
-      Class.observedAttributes = [];
-    }
-
-    Class.observedAttributes.push(attribute);
-    Object.defineProperty(Class.prototype, property, {
-      enumerable: true,
-      configurable: true,
-
-      get() {
-        if (type === Boolean) {
-          return this.hasAttribute(attribute);
-        }
-
-        const value = this.getAttribute(attribute);
-
-        if (type.instance) {
-          return type.instance(value === null ? options.default : value);
-        } else {
-          return type(value === null ? options.default : value);
-        }
-      },
-
-      set(value) {
-        if (type === Boolean) {
-          if (value) {
-            this.setAttribute(attribute, '');
-          } else {
-            this.removeAttribute(attribute);
-          }
-        } else {
-          this.setAttribute(attribute, value);
-        }
-      }
-
-    });
-  };
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
 }
-
-},{"../utils.js":37}],32:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.Component = Component;
-exports.getTagName = getTagName;
-exports.register = register;
-exports.bootstrap = bootstrap;
-
-var _utils = require("../utils.js");
-
-const COMPONENTS = [];
-const sggWidgets = Symbol.for('sggWidgets');
-
-function Component(namespace) {
-  return function define(Class) {
-    Class.namespace = namespace;
-
-    if (customElements[sggWidgets]) {
-      return register(Class);
-    }
-
-    COMPONENTS.push(Class);
-  };
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
 }
-
-function getTagName(Class) {
-  if (Class.tagName) return Class.tagName;
-  const {
-    namespace,
-    className
-  } = Class;
-  const name = className || Class.name;
-  return Class.tagName = (0, _utils.kebabCase)(namespace + name);
-}
-
-function register(component) {
-  const tagName = getTagName(component);
-  const plugins = customElements[sggWidgets];
-  const Component = (0, _utils.define)(plugins, component);
-  const Element = customElements.get(tagName);
-
-  if (Element) {
-    return (0, _utils.transfer)(Element, Component);
-  }
-
-  customElements.define(tagName, Component);
-}
-
-function bootstrap(plugins = []) {
-  customElements[sggWidgets] = plugins;
-
-  for (const component of COMPONENTS) {
-    register(component);
-  }
-}
-
-},{"../utils.js":37}],33:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.Template = Template;
-
-function Template(template) {
-  return function define(Class) {
-    Class.prototype.template = template;
-  };
-}
-
-},{}],34:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-var _exportNames = {
-  Component: true,
-  bootstrap: true,
-  Template: true,
-  Attribute: true
-};
-Object.defineProperty(exports, "Component", {
-  enumerable: true,
-  get: function () {
-    return _component.Component;
-  }
-});
-Object.defineProperty(exports, "bootstrap", {
-  enumerable: true,
-  get: function () {
-    return _component.bootstrap;
-  }
-});
-Object.defineProperty(exports, "Template", {
-  enumerable: true,
-  get: function () {
-    return _template.Template;
-  }
-});
-Object.defineProperty(exports, "Attribute", {
-  enumerable: true,
-  get: function () {
-    return _attribute.Attribute;
-  }
-});
-
-var _component = require("./decorators/component.js");
-
-var _template = require("./decorators/template.js");
-
-var _attribute = require("./decorators/attribute.js");
-
-var _utils = require("./utils.js");
-
-Object.keys(_utils).forEach(function (key) {
-  if (key === "default" || key === "__esModule") return;
-  if (Object.prototype.hasOwnProperty.call(_exportNames, key)) return;
-  Object.defineProperty(exports, key, {
-    enumerable: true,
-    get: function () {
-      return _utils[key];
-    }
-  });
-});
-
-},{"./decorators/attribute.js":31,"./decorators/component.js":32,"./decorators/template.js":33,"./utils.js":37}],35:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.hyper = hyper;
-
-var _utils = require("../utils.js");
-
-var _queue = require("./queue.js");
-
-function hyper({
-  bind
-}) {
-  const shedule = (0, _queue.queue)(function render(node) {
-    return node.template(node.html);
-  });
-  return function renderer(Class) {
-    (0, _utils.plugin)(Class.prototype, {
-      attributeChangedCallback(args, next) {
-        this.render();
-        return next();
-      },
-
-      connectedCallback(args, next) {
-        this.render();
-        return next();
-      },
-
-      render([callback], next) {
-        if (!this.html) {
-          this.attachShadow({
-            mode: 'open'
-          });
-          this.html = bind(this.shadowRoot);
-        }
-
-        shedule(this, (...args) => {
-          if (typeof callback === 'function') {
-            callback(...args);
-          }
-
-          next();
-        });
-      }
-
-    });
-  };
-}
-
-},{"../utils.js":37,"./queue.js":36}],36:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.queue = queue;
-
-var _utils = require("../utils.js");
-
-function queue(render) {
-  const queue = new Set();
-  const cache = new WeakMap();
-  const callbacks = new Set();
-
-  function apply() {
-    for (const node of queue) {
-      render(node, cache);
-    }
-  }
-
-  function attempt() {
+(function () {
     try {
-      apply();
-    } catch (error) {
-      throw error;
-    } finally {
-      queue.clear();
-
-      for (const callback of callbacks) {
-        callback();
-      }
-
-      callbacks.clear();
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
+        }
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
     }
-  }
-
-  return function shedule(element, callback) {
-    if (!queue.size) {
-      requestAnimationFrame(attempt);
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
     }
 
-    if (typeof callback === 'function') {
-      callbacks.add(callback);
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
     }
 
-    queue.add(element);
-  };
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
 }
 
-},{"../utils.js":37}],37:[function(require,module,exports){
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) { return [] }
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+},{}],27:[function(require,module,exports){
+'use strict';
+const strictUriEncode = require('strict-uri-encode');
+const decodeComponent = require('decode-uri-component');
+
+function encoderForArrayFormat(options) {
+	switch (options.arrayFormat) {
+		case 'index':
+			return (key, value, index) => {
+				return value === null ? [
+					encode(key, options),
+					'[',
+					index,
+					']'
+				].join('') : [
+					encode(key, options),
+					'[',
+					encode(index, options),
+					']=',
+					encode(value, options)
+				].join('');
+			};
+		case 'bracket':
+			return (key, value) => {
+				return value === null ? [encode(key, options), '[]'].join('') : [
+					encode(key, options),
+					'[]=',
+					encode(value, options)
+				].join('');
+			};
+		default:
+			return (key, value) => {
+				return value === null ? encode(key, options) : [
+					encode(key, options),
+					'=',
+					encode(value, options)
+				].join('');
+			};
+	}
+}
+
+function parserForArrayFormat(options) {
+	let result;
+
+	switch (options.arrayFormat) {
+		case 'index':
+			return (key, value, accumulator) => {
+				result = /\[(\d*)\]$/.exec(key);
+
+				key = key.replace(/\[\d*\]$/, '');
+
+				if (!result) {
+					accumulator[key] = value;
+					return;
+				}
+
+				if (accumulator[key] === undefined) {
+					accumulator[key] = {};
+				}
+
+				accumulator[key][result[1]] = value;
+			};
+		case 'bracket':
+			return (key, value, accumulator) => {
+				result = /(\[\])$/.exec(key);
+				key = key.replace(/\[\]$/, '');
+
+				if (!result) {
+					accumulator[key] = value;
+					return;
+				}
+
+				if (accumulator[key] === undefined) {
+					accumulator[key] = [value];
+					return;
+				}
+
+				accumulator[key] = [].concat(accumulator[key], value);
+			};
+		default:
+			return (key, value, accumulator) => {
+				if (accumulator[key] === undefined) {
+					accumulator[key] = value;
+					return;
+				}
+
+				accumulator[key] = [].concat(accumulator[key], value);
+			};
+	}
+}
+
+function encode(value, options) {
+	if (options.encode) {
+		return options.strict ? strictUriEncode(value) : encodeURIComponent(value);
+	}
+
+	return value;
+}
+
+function decode(value, options) {
+	if (options.decode) {
+		return decodeComponent(value);
+	}
+
+	return value;
+}
+
+function keysSorter(input) {
+	if (Array.isArray(input)) {
+		return input.sort();
+	}
+
+	if (typeof input === 'object') {
+		return keysSorter(Object.keys(input))
+			.sort((a, b) => Number(a) - Number(b))
+			.map(key => input[key]);
+	}
+
+	return input;
+}
+
+function extract(input) {
+	const queryStart = input.indexOf('?');
+	if (queryStart === -1) {
+		return '';
+	}
+
+	return input.slice(queryStart + 1);
+}
+
+function parse(input, options) {
+	options = Object.assign({decode: true, arrayFormat: 'none'}, options);
+
+	const formatter = parserForArrayFormat(options);
+
+	// Create an object with no prototype
+	const ret = Object.create(null);
+
+	if (typeof input !== 'string') {
+		return ret;
+	}
+
+	input = input.trim().replace(/^[?#&]/, '');
+
+	if (!input) {
+		return ret;
+	}
+
+	for (const param of input.split('&')) {
+		let [key, value] = param.replace(/\+/g, ' ').split('=');
+
+		// Missing `=` should be `null`:
+		// http://w3.org/TR/2012/WD-url-20120524/#collect-url-parameters
+		value = value === undefined ? null : decode(value, options);
+
+		formatter(decode(key, options), value, ret);
+	}
+
+	return Object.keys(ret).sort().reduce((result, key) => {
+		const value = ret[key];
+		if (Boolean(value) && typeof value === 'object' && !Array.isArray(value)) {
+			// Sort object keys, not values
+			result[key] = keysSorter(value);
+		} else {
+			result[key] = value;
+		}
+
+		return result;
+	}, Object.create(null));
+}
+
+exports.extract = extract;
+exports.parse = parse;
+
+exports.stringify = (obj, options) => {
+	if (!obj) {
+		return '';
+	}
+
+	options = Object.assign({
+		encode: true,
+		strict: true,
+		arrayFormat: 'none'
+	}, options);
+
+	const formatter = encoderForArrayFormat(options);
+	const keys = Object.keys(obj);
+
+	if (options.sort !== false) {
+		keys.sort(options.sort);
+	}
+
+	return keys.map(key => {
+		const value = obj[key];
+
+		if (value === undefined) {
+			return '';
+		}
+
+		if (value === null) {
+			return encode(key, options);
+		}
+
+		if (Array.isArray(value)) {
+			const result = [];
+
+			for (const value2 of value.slice()) {
+				if (value2 === undefined) {
+					continue;
+				}
+
+				result.push(formatter(key, value2, result.length));
+			}
+
+			return result.join('&');
+		}
+
+		return encode(key, options) + '=' + encode(value, options);
+	}).filter(x => x.length > 0).join('&');
+};
+
+exports.parseUrl = (input, options) => {
+	const hashStart = input.indexOf('#');
+	if (hashStart !== -1) {
+		input = input.slice(0, hashStart);
+	}
+
+	return {
+		url: input.split('?')[0] || '',
+		query: parse(extract(input), options)
+	};
+};
+
+},{"decode-uri-component":8,"strict-uri-encode":28}],28:[function(require,module,exports){
+'use strict';
+module.exports = str => encodeURIComponent(str).replace(/[!'()*]/g, x => `%${x.charCodeAt(0).toString(16).toUpperCase()}`);
+
+},{}],29:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.kebabCase = kebabCase;
-exports.camelCase = camelCase;
-exports.define = define;
-exports.middleware = middleware;
-exports.plugin = plugin;
-exports.transfer = transfer;
-const UPPER = /.[A-Z]/g;
+exports.PageRouter = void 0;
 
-function kebabCase(string) {
-  return string.replace(UPPER, c => c[0] + '-' + c[1].toLowerCase());
+var _widgets = require("@scoutgg/widgets");
+
+var _component = require("@scoutgg/widgets/cjs/decorators/component");
+
+var _decorator = require("./decorator");
+
+var _page = _interopRequireDefault(require("page"));
+
+var _dec, _dec2, _class;
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _wrapNativeSuper(Class) { var _cache = typeof Map === "function" ? new Map() : undefined; _wrapNativeSuper = function _wrapNativeSuper(Class) { if (Class === null || !_isNativeFunction(Class)) return Class; if (typeof Class !== "function") { throw new TypeError("Super expression must either be null or a function"); } if (typeof _cache !== "undefined") { if (_cache.has(Class)) return _cache.get(Class); _cache.set(Class, Wrapper); } function Wrapper() { return _construct(Class, arguments, _getPrototypeOf(this).constructor); } Wrapper.prototype = Object.create(Class.prototype, { constructor: { value: Wrapper, enumerable: false, writable: true, configurable: true } }); return _setPrototypeOf(Wrapper, Class); }; return _wrapNativeSuper(Class); }
+
+function isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+
+function _construct(Parent, args, Class) { if (isNativeReflectConstruct()) { _construct = Reflect.construct; } else { _construct = function _construct(Parent, args, Class) { var a = [null]; a.push.apply(a, args); var Constructor = Function.bind.apply(Parent, a); var instance = new Constructor(); if (Class) _setPrototypeOf(instance, Class.prototype); return instance; }; } return _construct.apply(null, arguments); }
+
+function _isNativeFunction(fn) { return Function.toString.call(fn).indexOf("[native code]") !== -1; }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _templateObject() {
+  var data = _taggedTemplateLiteral(["", ""]);
+
+  _templateObject = function _templateObject() {
+    return data;
+  };
+
+  return data;
 }
 
-function camelCase(string) {
-  return string.replace(/-./g, c => c[1].toUpperCase());
-}
+function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
-function define(decorators = [], target = decorators.pop()) {
-  for (const transform of decorators.reverse()) {
-    target = transform(target) || target;
+var PageRouter = (_dec = (0, _widgets.Component)('ang'), _dec2 = (0, _widgets.Template)(function (html) {
+  html(_templateObject(), this.route);
+}), _dec(_class = _dec2(_class =
+/*#__PURE__*/
+function (_HTMLElement) {
+  _inherits(PageRouter, _HTMLElement);
+
+  function PageRouter() {
+    _classCallCheck(this, PageRouter);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(PageRouter).apply(this, arguments));
   }
 
-  return target;
-}
+  _createClass(PageRouter, [{
+    key: "connectedCallback",
+    value: function connectedCallback() {
+      var _this = this;
 
-function middleware(done) {
-  const middleware = [];
-  Object.assign(pipeline, {
-    use(...callbacks) {
-      return middleware.push(...callbacks), this;
+      this.route = '';
+
+      _decorator.routes.forEach(function (route) {
+        (0, _page.default)(route.route, function (context, next) {
+          var elem = document.createElement((0, _component.getTagName)(route.self));
+          Object.keys(context.params).forEach(function (attribute) {
+            if (!isNaN(attribute)) return;
+            elem.setAttribute(attribute, context.params[attribute]);
+          });
+          _this.route = elem;
+
+          _this.render(function () {
+            _this.emit('routeChanged', {
+              context: context
+            });
+          });
+        });
+      });
+
+      (0, _page.default)();
+      var pathname = window.location.hash.slice(1);
+      if (pathname) (0, _page.default)(pathname);
     }
+  }]);
 
-  });
+  return PageRouter;
+}(_wrapNativeSuper(HTMLElement))) || _class) || _class);
+exports.PageRouter = PageRouter;
+},{"./decorator":30,"@scoutgg/widgets":4,"@scoutgg/widgets/cjs/decorators/component":2,"page":25}],30:[function(require,module,exports){
+"use strict";
 
-  function pipeline(...args) {
-    const context = {
-      self: this,
-      index: 0
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Route = Route;
+exports.routes = void 0;
+var routes = new Set();
+exports.routes = routes;
+
+function Route(route, element) {
+  return function run(self) {
+    routes.add({
+      route: route,
+      self: self
+    });
+    console.log('Route decorator ran', self);
+  };
+}
+},{}],31:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+Object.defineProperty(exports, "PageRouter", {
+  enumerable: true,
+  get: function get() {
+    return _component.PageRouter;
+  }
+});
+Object.defineProperty(exports, "Route", {
+  enumerable: true,
+  get: function get() {
+    return _decorator.Route;
+  }
+});
+Object.defineProperty(exports, "routes", {
+  enumerable: true,
+  get: function get() {
+    return _decorator.routes;
+  }
+});
+Object.defineProperty(exports, "router", {
+  enumerable: true,
+  get: function get() {
+    return _router.page;
+  }
+});
+
+var _component = require("./component");
+
+var _decorator = require("./decorator");
+
+var _router = require("./router");
+},{"./component":29,"./decorator":30,"./router":32}],32:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+Object.defineProperty(exports, "page", {
+  enumerable: true,
+  get: function get() {
+    return _page.default;
+  }
+});
+
+var _decorator = require("./decorator");
+
+var _page = _interopRequireDefault(require("page"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+},{"./decorator":30,"page":25}],33:[function(require,module,exports){
+"use strict";
+
+function _typeof2(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof2 = function _typeof2(obj) { return typeof obj; }; } else { _typeof2 = function _typeof2(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof2(obj); }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _widgets = require("@scoutgg/widgets");
+
+var _hyperhtml = require("hyperhtml");
+
+var _widgetsRouter = require("widgets-router");
+
+var _auth = require("../../services/auth");
+
+require("../button/button");
+
+var _dec, _dec2, _dec3, _class;
+
+function _typeof(obj) {
+  if (typeof Symbol === "function" && _typeof2(Symbol.iterator) === "symbol") {
+    _typeof = function _typeof(obj) {
+      return _typeof2(obj);
     };
-
-    function next() {
-      const method = middleware[context.index++];
-
-      if (method) {
-        return method.call(context.self, args, next);
-      } else if (done) {
-        return done.apply(context.self, args);
-      }
-    }
-
-    return next();
+  } else {
+    _typeof = function _typeof(obj) {
+      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : _typeof2(obj);
+    };
   }
 
-  return pipeline;
+  return _typeof(obj);
 }
 
-function plugin(target, ...sources) {
-  for (const source of sources) {
-    for (const [property, method] of Object.entries(source)) {
-      if (typeof method !== 'function') continue;
-
-      if (!target[property]) {
-        target[property] = middleware();
-      } else if (!target[property].use) {
-        target[property] = middleware(target[property]);
-      }
-
-      target[property].use(method);
-    }
-  }
-
-  return target;
-}
-
-function transfer(target, ...sources) {
-  for (const source of sources) {
-    const properties = Object.getOwnPropertyDescriptors(source);
-
-    for (const [name, descriptor] of Object.entries(properties)) {
-      if (name === 'prototype') {
-        transfer(target.prototype, source.prototype);
-      }
-
-      if (descriptor.configurable) {
-        Object.defineProperty(target, name, descriptor);
-      }
-    }
+function _classCallCheck(instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
   }
 }
 
-},{}]},{},[24]);
+function _defineProperties(target, props) {
+  for (var i = 0; i < props.length; i++) {
+    var descriptor = props[i];
+    descriptor.enumerable = descriptor.enumerable || false;
+    descriptor.configurable = true;
+    if ("value" in descriptor) descriptor.writable = true;
+    Object.defineProperty(target, descriptor.key, descriptor);
+  }
+}
+
+function _createClass(Constructor, protoProps, staticProps) {
+  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+  if (staticProps) _defineProperties(Constructor, staticProps);
+  return Constructor;
+}
+
+function _possibleConstructorReturn(self, call) {
+  if (call && (_typeof(call) === "object" || typeof call === "function")) {
+    return call;
+  }
+
+  return _assertThisInitialized(self);
+}
+
+function _assertThisInitialized(self) {
+  if (self === void 0) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+
+  return self;
+}
+
+function _inherits(subClass, superClass) {
+  if (typeof superClass !== "function" && superClass !== null) {
+    throw new TypeError("Super expression must either be null or a function");
+  }
+
+  subClass.prototype = Object.create(superClass && superClass.prototype, {
+    constructor: {
+      value: subClass,
+      writable: true,
+      configurable: true
+    }
+  });
+  if (superClass) _setPrototypeOf(subClass, superClass);
+}
+
+function _wrapNativeSuper(Class) {
+  var _cache = typeof Map === "function" ? new Map() : undefined;
+
+  _wrapNativeSuper = function _wrapNativeSuper(Class) {
+    if (Class === null || !_isNativeFunction(Class)) return Class;
+
+    if (typeof Class !== "function") {
+      throw new TypeError("Super expression must either be null or a function");
+    }
+
+    if (typeof _cache !== "undefined") {
+      if (_cache.has(Class)) return _cache.get(Class);
+
+      _cache.set(Class, Wrapper);
+    }
+
+    function Wrapper() {
+      return _construct(Class, arguments, _getPrototypeOf(this).constructor);
+    }
+
+    Wrapper.prototype = Object.create(Class.prototype, {
+      constructor: {
+        value: Wrapper,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+    return _setPrototypeOf(Wrapper, Class);
+  };
+
+  return _wrapNativeSuper(Class);
+}
+
+function isNativeReflectConstruct() {
+  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+  if (Reflect.construct.sham) return false;
+  if (typeof Proxy === "function") return true;
+
+  try {
+    Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function _construct(Parent, args, Class) {
+  if (isNativeReflectConstruct()) {
+    _construct = Reflect.construct;
+  } else {
+    _construct = function _construct(Parent, args, Class) {
+      var a = [null];
+      a.push.apply(a, args);
+      var Constructor = Function.bind.apply(Parent, a);
+      var instance = new Constructor();
+      if (Class) _setPrototypeOf(instance, Class.prototype);
+      return instance;
+    };
+  }
+
+  return _construct.apply(null, arguments);
+}
+
+function _isNativeFunction(fn) {
+  return Function.toString.call(fn).indexOf("[native code]") !== -1;
+}
+
+function _setPrototypeOf(o, p) {
+  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+    o.__proto__ = p;
+    return o;
+  };
+
+  return _setPrototypeOf(o, p);
+}
+
+function _getPrototypeOf(o) {
+  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+    return o.__proto__ || Object.getPrototypeOf(o);
+  };
+  return _getPrototypeOf(o);
+}
+
+function _templateObject2() {
+  var data = _taggedTemplateLiteral(["\n        <h1>Welcome ", "</h1>\n      "]);
+
+  _templateObject2 = function _templateObject2() {
+    return data;
+  };
+
+  return data;
+}
+
+function _templateObject() {
+  var data = _taggedTemplateLiteral(["\n    <style>\n      :host {\n        display: flex;\n        flex-direction: column;\n        align-items: center;\n        justify-content: center;\n        min-height: 100vh;\n        width: 100vw;\n        background: url('/assets/images/bg-large.jpg');\n        background-size: cover;\n        background-position: center;\n      }\n      .untappd {\n        --button-color: #fff;\n        --button-background: var(--untappd-color);\n        --button-font-weight: 800;\n        font-size: 1.5em;\n        filter: drop-shadow(2px 1px 2px rgba(0, 0, 0, .5));\n      }\n      .untappd img {\n        max-height: 1.5em;\n        margin-right: .5em;\n      }\n    </style>\n    ", "\n    <beer-button class=\"untappd\" href=\"/auth\">\n      <img src=\"/assets/images/untappd-logo.jpg\" alt=\"Untappd logo\" />\n      Sign in with Untappd\n    </beer-button>\n  "]);
+
+  _templateObject = function _templateObject() {
+    return data;
+  };
+
+  return data;
+}
+
+function _taggedTemplateLiteral(strings, raw) {
+  if (!raw) {
+    raw = strings.slice(0);
+  }
+
+  return Object.freeze(Object.defineProperties(strings, {
+    raw: {
+      value: Object.freeze(raw)
+    }
+  }));
+}
+
+var Auth = (_dec = (0, _widgetsRouter.Route)('/login'), _dec2 = (0, _widgets.Component)('beer'), _dec3 = (0, _widgets.Template)(function (html) {
+  html(_templateObject(), this.user ? (0, _hyperhtml.wire)()(_templateObject2(), this.user.username) : '');
+}), _dec(_class = _dec2(_class = _dec3(_class =
+/*#__PURE__*/
+function (_HTMLElement) {
+  _inherits(Auth, _HTMLElement);
+
+  function Auth() {
+    _classCallCheck(this, Auth);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(Auth).apply(this, arguments));
+  }
+
+  _createClass(Auth, [{
+    key: "connectedCallback",
+    value: function connectedCallback() {}
+  }, {
+    key: "user",
+    get: function get() {
+      return (0, _auth.current)();
+    }
+  }]);
+
+  return Auth;
+}(_wrapNativeSuper(HTMLElement))) || _class) || _class) || _class);
+exports.default = Auth;
+
+},{"../../services/auth":37,"../button/button":34,"@scoutgg/widgets":4,"hyperhtml":13,"widgets-router":31}],34:[function(require,module,exports){
+"use strict";
+
+function _typeof2(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof2 = function _typeof2(obj) { return typeof obj; }; } else { _typeof2 = function _typeof2(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof2(obj); }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _widgets = require("@scoutgg/widgets");
+
+var _widgetsRouter = require("widgets-router");
+
+var _dec, _dec2, _dec3, _class;
+
+function _typeof(obj) {
+  if (typeof Symbol === "function" && _typeof2(Symbol.iterator) === "symbol") {
+    _typeof = function _typeof(obj) {
+      return _typeof2(obj);
+    };
+  } else {
+    _typeof = function _typeof(obj) {
+      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : _typeof2(obj);
+    };
+  }
+
+  return _typeof(obj);
+}
+
+function _classCallCheck(instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+}
+
+function _possibleConstructorReturn(self, call) {
+  if (call && (_typeof(call) === "object" || typeof call === "function")) {
+    return call;
+  }
+
+  return _assertThisInitialized(self);
+}
+
+function _assertThisInitialized(self) {
+  if (self === void 0) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+
+  return self;
+}
+
+function _inherits(subClass, superClass) {
+  if (typeof superClass !== "function" && superClass !== null) {
+    throw new TypeError("Super expression must either be null or a function");
+  }
+
+  subClass.prototype = Object.create(superClass && superClass.prototype, {
+    constructor: {
+      value: subClass,
+      writable: true,
+      configurable: true
+    }
+  });
+  if (superClass) _setPrototypeOf(subClass, superClass);
+}
+
+function _wrapNativeSuper(Class) {
+  var _cache = typeof Map === "function" ? new Map() : undefined;
+
+  _wrapNativeSuper = function _wrapNativeSuper(Class) {
+    if (Class === null || !_isNativeFunction(Class)) return Class;
+
+    if (typeof Class !== "function") {
+      throw new TypeError("Super expression must either be null or a function");
+    }
+
+    if (typeof _cache !== "undefined") {
+      if (_cache.has(Class)) return _cache.get(Class);
+
+      _cache.set(Class, Wrapper);
+    }
+
+    function Wrapper() {
+      return _construct(Class, arguments, _getPrototypeOf(this).constructor);
+    }
+
+    Wrapper.prototype = Object.create(Class.prototype, {
+      constructor: {
+        value: Wrapper,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+    return _setPrototypeOf(Wrapper, Class);
+  };
+
+  return _wrapNativeSuper(Class);
+}
+
+function isNativeReflectConstruct() {
+  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+  if (Reflect.construct.sham) return false;
+  if (typeof Proxy === "function") return true;
+
+  try {
+    Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function _construct(Parent, args, Class) {
+  if (isNativeReflectConstruct()) {
+    _construct = Reflect.construct;
+  } else {
+    _construct = function _construct(Parent, args, Class) {
+      var a = [null];
+      a.push.apply(a, args);
+      var Constructor = Function.bind.apply(Parent, a);
+      var instance = new Constructor();
+      if (Class) _setPrototypeOf(instance, Class.prototype);
+      return instance;
+    };
+  }
+
+  return _construct.apply(null, arguments);
+}
+
+function _isNativeFunction(fn) {
+  return Function.toString.call(fn).indexOf("[native code]") !== -1;
+}
+
+function _setPrototypeOf(o, p) {
+  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+    o.__proto__ = p;
+    return o;
+  };
+
+  return _setPrototypeOf(o, p);
+}
+
+function _getPrototypeOf(o) {
+  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+    return o.__proto__ || Object.getPrototypeOf(o);
+  };
+  return _getPrototypeOf(o);
+}
+
+function _templateObject() {
+  var data = _taggedTemplateLiteral(["\n    <style>\n      a {\n        display: inline-flex;\n        align-items: center;\n        padding: var(--button-padding, .5em 1em);\n        background: var(--button-background, var(--accent-color));\n        color: var(--button-color, var(--accent-text));\n        border-radius: var(--button-radius, 2em);\n        font-weight: var(--button-font-weight, inherit);\n        text-decoration: none;\n      }\n    </style>\n    <a href=", "><slot></slot></a>\n  "]);
+
+  _templateObject = function _templateObject() {
+    return data;
+  };
+
+  return data;
+}
+
+function _taggedTemplateLiteral(strings, raw) {
+  if (!raw) {
+    raw = strings.slice(0);
+  }
+
+  return Object.freeze(Object.defineProperties(strings, {
+    raw: {
+      value: Object.freeze(raw)
+    }
+  }));
+}
+
+var Button = (_dec = (0, _widgets.Component)('beer'), _dec2 = (0, _widgets.Attribute)('href', String, {
+  default: 'javascript:void()'
+}), _dec3 = (0, _widgets.Template)(function (html) {
+  html(_templateObject(), this.href);
+}), _dec(_class = _dec2(_class = _dec3(_class =
+/*#__PURE__*/
+function (_HTMLElement) {
+  _inherits(Button, _HTMLElement);
+
+  function Button() {
+    _classCallCheck(this, Button);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(Button).apply(this, arguments));
+  }
+
+  return Button;
+}(_wrapNativeSuper(HTMLElement))) || _class) || _class) || _class);
+exports.default = Button;
+
+},{"@scoutgg/widgets":4,"widgets-router":31}],35:[function(require,module,exports){
+"use strict";
+
+function _typeof2(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof2 = function _typeof2(obj) { return typeof obj; }; } else { _typeof2 = function _typeof2(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof2(obj); }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _widgets = require("@scoutgg/widgets");
+
+var _auth = require("../../services/auth");
+
+var _widgetsRouter = require("widgets-router");
+
+var _dec, _dec2, _dec3, _class;
+
+function _typeof(obj) {
+  if (typeof Symbol === "function" && _typeof2(Symbol.iterator) === "symbol") {
+    _typeof = function _typeof(obj) {
+      return _typeof2(obj);
+    };
+  } else {
+    _typeof = function _typeof(obj) {
+      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : _typeof2(obj);
+    };
+  }
+
+  return _typeof(obj);
+}
+
+function _classCallCheck(instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+}
+
+function _defineProperties(target, props) {
+  for (var i = 0; i < props.length; i++) {
+    var descriptor = props[i];
+    descriptor.enumerable = descriptor.enumerable || false;
+    descriptor.configurable = true;
+    if ("value" in descriptor) descriptor.writable = true;
+    Object.defineProperty(target, descriptor.key, descriptor);
+  }
+}
+
+function _createClass(Constructor, protoProps, staticProps) {
+  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+  if (staticProps) _defineProperties(Constructor, staticProps);
+  return Constructor;
+}
+
+function _possibleConstructorReturn(self, call) {
+  if (call && (_typeof(call) === "object" || typeof call === "function")) {
+    return call;
+  }
+
+  return _assertThisInitialized(self);
+}
+
+function _assertThisInitialized(self) {
+  if (self === void 0) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+
+  return self;
+}
+
+function _inherits(subClass, superClass) {
+  if (typeof superClass !== "function" && superClass !== null) {
+    throw new TypeError("Super expression must either be null or a function");
+  }
+
+  subClass.prototype = Object.create(superClass && superClass.prototype, {
+    constructor: {
+      value: subClass,
+      writable: true,
+      configurable: true
+    }
+  });
+  if (superClass) _setPrototypeOf(subClass, superClass);
+}
+
+function _wrapNativeSuper(Class) {
+  var _cache = typeof Map === "function" ? new Map() : undefined;
+
+  _wrapNativeSuper = function _wrapNativeSuper(Class) {
+    if (Class === null || !_isNativeFunction(Class)) return Class;
+
+    if (typeof Class !== "function") {
+      throw new TypeError("Super expression must either be null or a function");
+    }
+
+    if (typeof _cache !== "undefined") {
+      if (_cache.has(Class)) return _cache.get(Class);
+
+      _cache.set(Class, Wrapper);
+    }
+
+    function Wrapper() {
+      return _construct(Class, arguments, _getPrototypeOf(this).constructor);
+    }
+
+    Wrapper.prototype = Object.create(Class.prototype, {
+      constructor: {
+        value: Wrapper,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+    return _setPrototypeOf(Wrapper, Class);
+  };
+
+  return _wrapNativeSuper(Class);
+}
+
+function isNativeReflectConstruct() {
+  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+  if (Reflect.construct.sham) return false;
+  if (typeof Proxy === "function") return true;
+
+  try {
+    Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function _construct(Parent, args, Class) {
+  if (isNativeReflectConstruct()) {
+    _construct = Reflect.construct;
+  } else {
+    _construct = function _construct(Parent, args, Class) {
+      var a = [null];
+      a.push.apply(a, args);
+      var Constructor = Function.bind.apply(Parent, a);
+      var instance = new Constructor();
+      if (Class) _setPrototypeOf(instance, Class.prototype);
+      return instance;
+    };
+  }
+
+  return _construct.apply(null, arguments);
+}
+
+function _isNativeFunction(fn) {
+  return Function.toString.call(fn).indexOf("[native code]") !== -1;
+}
+
+function _setPrototypeOf(o, p) {
+  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+    o.__proto__ = p;
+    return o;
+  };
+
+  return _setPrototypeOf(o, p);
+}
+
+function _getPrototypeOf(o) {
+  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+    return o.__proto__ || Object.getPrototypeOf(o);
+  };
+  return _getPrototypeOf(o);
+}
+
+function _templateObject() {
+  var data = _taggedTemplateLiteral(["\n    <h1>Hello ", "</h1>\n    <h1>\u2615Fresh new component \xABwelcome\xBB</h1>\n  "]);
+
+  _templateObject = function _templateObject() {
+    return data;
+  };
+
+  return data;
+}
+
+function _taggedTemplateLiteral(strings, raw) {
+  if (!raw) {
+    raw = strings.slice(0);
+  }
+
+  return Object.freeze(Object.defineProperties(strings, {
+    raw: {
+      value: Object.freeze(raw)
+    }
+  }));
+}
+
+var Welcome = (_dec = (0, _widgetsRouter.Route)('/welcome'), _dec2 = (0, _widgets.Component)('demo'), _dec3 = (0, _widgets.Template)(function (html) {
+  html(_templateObject(), this.user.username);
+}), _dec(_class = _dec2(_class = _dec3(_class =
+/*#__PURE__*/
+function (_HTMLElement) {
+  _inherits(Welcome, _HTMLElement);
+
+  function Welcome() {
+    _classCallCheck(this, Welcome);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(Welcome).apply(this, arguments));
+  }
+
+  _createClass(Welcome, [{
+    key: "user",
+    get: function get() {
+      return (0, _auth.current)();
+    }
+  }]);
+
+  return Welcome;
+}(_wrapNativeSuper(HTMLElement))) || _class) || _class) || _class);
+exports.default = Welcome;
+
+},{"../../services/auth":37,"@scoutgg/widgets":4,"widgets-router":31}],36:[function(require,module,exports){
+"use strict";
+
+var _widgets = require("@scoutgg/widgets");
+
+var _hyper = require("@scoutgg/widgets/cjs/renderers/hyper");
+
+var _widgetsRouter = require("widgets-router");
+
+var _queryString = _interopRequireDefault(require("query-string"));
+
+var _hyperhtml = _interopRequireDefault(require("hyperhtml"));
+
+var _auth = require("./services/auth");
+
+require("./components/welcome/welcome");
+
+require("./components/auth/auth");
+
+function _interopRequireDefault(obj) {
+  return obj && obj.__esModule ? obj : {
+    default: obj
+  };
+} // Import the components you want to use
+// Middleware to check if we have received a token
+
+
+(0, _widgetsRouter.router)('/', function (context, next) {
+  console.log('hit');
+
+  var token = _queryString.default.parse(window.location.search).token;
+
+  if (token || localStorage.beerToken) {
+    (0, _auth.login)(token);
+    (0, _widgetsRouter.router)('/welcome');
+  }
+
+  if (!localStorage.beerToken) _widgetsRouter.router.redirect('/login');
+}); // Bootstrap Widgets (Start it)
+
+(0, _widgets.bootstrap)([(0, _hyper.hyper)(_hyperhtml.default)]);
+
+},{"./components/auth/auth":33,"./components/welcome/welcome":35,"./services/auth":37,"@scoutgg/widgets":4,"@scoutgg/widgets/cjs/renderers/hyper":5,"hyperhtml":13,"query-string":27,"widgets-router":31}],37:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.login = login;
+exports.current = current;
+exports.logout = logout;
+
+function login(token) {
+  localStorage.beerToken = token;
+  return token;
+}
+
+function current() {
+  if (!localStorage.beerToken) return;
+
+  try {
+    return JSON.parse(atob(localStorage.beerToken.split('.')[1]));
+  } catch (e) {
+    return;
+  }
+}
+
+function logout() {
+  delete localStorage.beerToken; // Consider using a router to do this redirect for best user experience
+
+  window.location = '/';
+}
+
+},{}]},{},[36]);
