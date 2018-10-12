@@ -14,7 +14,7 @@ module.exports = async function create_event(req, res) {
   })
 
   const code = randomString({ length: 8 })
-  const event = await db('events').select({ code: req.body.code }).first()
+  const event = await db('events').where({ code: req.body.code }).first()
 
   if(!event) return res.status(404).json({ error: 'event not found' })
 

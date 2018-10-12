@@ -8,7 +8,6 @@ const schema = Joi.object().keys({
 
 module.exports = async function create_event(req, res) {
   let result = Joi.validate(req.body, schema)
-  console.log('USER', req.payload)
   if(result.error) return res.status(500).json({
     error: result.error.details[0].message,
   })

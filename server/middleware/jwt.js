@@ -4,6 +4,8 @@ const config = require('../config')
 function determineAuth(req) {
   if(req.get('Beerer')) {
     return { token: req.get('Beerer') }
+  } else {
+    return {}
   }
 }
 
