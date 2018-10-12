@@ -8,9 +8,9 @@ const schema = Joi.object().keys({
 
 module.exports = async function create_event(req, res) {
   let result = Joi.validate(req.body, schema)
-
+  console.log('USER', req.payload)
   if(result.error) return res.status(500).json({
-    error: result.error.details[0].message
+    error: result.error.details[0].message,
   })
 
   const code = randomString({ length: 8 })
@@ -19,8 +19,8 @@ module.exports = async function create_event(req, res) {
     code,
   })
 
-  const event = await db('events').insert(req.body)
+  const event = await db('events').insert(Object.assign(req.body))
     .returning(['id', 'name', 'code', 'created_at'])
-    
+
   res.status(200).json(Object.assign({ status: 'ok' }, event[0]))
 }

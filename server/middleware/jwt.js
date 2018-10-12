@@ -2,14 +2,8 @@ const jwt = require('jsonwebtoken')
 const config = require('../config')
 
 function determineAuth(req) {
-  console.log(req.get('Authorization'), req.get('Beerer'), req.get('Bearer'))
-  if(req.query.beerer) {
-    return { token: req.query.beerer.token }
-  } else if(req.get('Authorization')) {
-    let [token] = req.get('Authorization').split(' ').slice(-2)
-    return {token}
-  } else {
-    return {token: ''}
+  if(req.get('Beerer')) {
+    return { token: req.get('Beerer') }
   }
 }
 
