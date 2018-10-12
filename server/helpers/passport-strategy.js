@@ -8,7 +8,6 @@ passport.use(new UntappdStrategy({
   callbackURL: config.untappdCallbackUrl,
 }, (accessToken, refreshToken, profile, done) => {
   // Handle user data I guess?
-  console.log('testing', { accessToken, refreshToken, profile })
   if(!accessToken || !profile) return done(null)
   done(null, { accessToken, profile })
 }))
