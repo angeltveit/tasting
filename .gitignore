@@ -1,3 +1,4 @@
 node_modules
 build
 server/development.js
+assets/build.js
