@@ -19,7 +19,7 @@ import { PageRouter } from 'widgets-router'
         text-decoration: none;
       }
     </style>
-    <a href=${this.href}><slot></slot></a>
+    <a href=${this.href || 'javascript:void()'}><slot></slot></a>
   `
 })
 export default class Button extends HTMLElement {
