@@ -1,4 +1,4 @@
-# Blindsaking av øl på ølsmaking AKA WOOZY
+# Blindsaking av øl på AKA WOOZY
 
 ## HOW IT WORKS MVP
 
@@ -19,4 +19,8 @@
 
 ## HOW ITS ALL CONNECTED
 
+???
+
 ## HOW TO SET UP
+
+???
