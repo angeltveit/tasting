@@ -19,8 +19,26 @@
 
 ## HOW ITS ALL CONNECTED
 
-???
+Database med tre tables
 
-## HOW TO SET UP
+* events_participants
+* events
+* user_table
 
-???
+APIet er tilgjengelig på /api
+
+POST  /events create
+
+POST /events/join :code
+
+
+## HOW TO SET UP LOCAL DEVELOPMENT
+
+1. `git clone https://github.com/angeltveit/tasting.git`
+2. `yarn`
+3. [installer postgres](https://www.postgresql.org/download)
+2. `knex migrate:latest`
+4. kjøre `yarn dev`
+5. i et annet vindu `yarn watch` siden torbjørn hater paralelle tasks
+6. [localhost:3000](http://localhost:3000)
+7. ???

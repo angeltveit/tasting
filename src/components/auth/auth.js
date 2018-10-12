@@ -37,7 +37,7 @@ import '../button/button'
         <h1>Welcome ${this.user.username}</h1>
       ` : ''
     }
-    <beer-button class="untappd" href="/auth">
+    <beer-button class="untappd" href="/api/auth">
       <img src="/assets/images/untappd-logo.jpg" alt="Untappd logo" />
       Sign in with Untappd
     </beer-button>

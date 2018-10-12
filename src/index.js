@@ -6,6 +6,7 @@ import hyper from 'hyperhtml'
 import { login, current } from './services/auth'
 import './components/welcome/welcome'
 import "./components/create-event/create-event"
+import "./components/join-event/join-event"
 
 // Import the components you want to use
 import './components/auth/auth'
