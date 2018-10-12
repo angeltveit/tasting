@@ -18,6 +18,9 @@ module.exports = async function create_event(req, res) {
 
   if(!event) return res.status(404).json({ error: 'event not found' })
 
+  console.log('User', req.payload)
+  console.log('Event', event)
+
   await db('events_participants').insert({
     user_id: req.payload.id,
     event_id: event.id,
