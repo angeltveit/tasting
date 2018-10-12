@@ -16,6 +16,7 @@ module.exports = async function create_event(req, res) {
   console.log(req.body)
   req.body = Object.assign({}, req.body, {
     code,
+    created_by: req.payload.id,
   })
 
   const event = await db('events').insert(Object.assign(req.body))
