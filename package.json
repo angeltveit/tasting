@@ -25,6 +25,7 @@
     "knex": "^0.15.2",
     "passport": "^0.4.0",
     "passport-untappd": "^1.0.0",
+    "pg": "^7.5.0",
     "query-string": "^6.2.0",
     "widgets-router": "https://github.com/angeltveit/widgets-router.git"
   },
