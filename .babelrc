@@ -1,0 +1,15 @@
+{
+  "presets": [["@babel/preset-env", { "targets": "<= 5%" }]],
+  "plugins": [
+    ["@babel/plugin-proposal-decorators", { "legacy": true }],
+    ["@babel/plugin-proposal-class-properties", { "loose" : true }]
+  ],
+  "env": {
+    "production": {
+      "presets": ["@babel/preset-env", ["minify", {
+        "keepClassName": true,
+        "keepFnName": true
+      }]]
+    }
+  }
+}

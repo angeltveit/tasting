@@ -1,0 +1,50 @@
+{
+  "name": "widgets-lite",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "serve": "budo src --dir . --serve assets/build.js --live --open -- -t babelify",
+    "watch": "watchify src/index.js -o assets/build.js -t [babelify]",
+    "build": "browserify src/index.js -o assets/build.js -t babelify",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "browserify": {
+    "transform": [
+      "babelify"
+    ]
+  },
+  "dependencies": {
+    "@scoutgg/widgets": "^2.2.0",
+    "express": "^4.16.3",
+    "hyperhtml": "^2.13.0",
+    "jsonwebtoken": "^8.3.0",
+    "knex": "^0.15.2",
+    "passport": "^0.4.0",
+    "passport-untappd": "^1.0.0",
+    "query-string": "^6.2.0",
+    "widgets-router": "../widgets-router"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.0.0",
+    "@babel/core": "^7.0.0-beta.54",
+    "@babel/plugin-proposal-class-properties": "^7.0.0-beta.54",
+    "@babel/plugin-proposal-decorators": "^7.0.0",
+    "@babel/preset-env": "^7.0.0",
+    "babel-preset-minify": "^0.5.0",
+    "babelify": "^10.0.0",
+    "browserify": "^16.2.2",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^8.0.0",
+    "gulp-rename": "^1.4.0",
+    "handlebars": "^4.0.12",
+    "lodash": "^4.17.10",
+    "pluralize": "^7.0.0",
+    "tinyify": "^2.4.3",
+    "uglifyify": "^5.0.1",
+    "vinyl-buffer": "^1.0.1",
+    "vinyl-source-stream": "^2.0.0"
+  }
+}
