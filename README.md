@@ -30,4 +30,4 @@
 4. kjøre `yarn dev`
 5. i et annet vindu `yarn watch` siden torbjørn hater paralelle tasks
 6. [localhost:3000](http://localhost:3000)
-???
+7. ???
