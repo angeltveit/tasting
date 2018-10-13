@@ -9,11 +9,9 @@ app.get('/untappd', passport.authenticate('untappd', {
   failureRedirect: '/?error=auth_failed'
 }), async (req, res) => {
   // Untappd login successful
-  console.log('Imma making a user')
   let exists = await db('users')
     .where({ untappd_id: req.user.profile.id })
     .first()
-  console.log('exists', exists)
 
   if(!exists) {
     try {

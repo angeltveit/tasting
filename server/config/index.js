@@ -6,6 +6,4 @@ if(process.env.STAGE !== 'production') {
   config = Object.assign({}, config, dev)
 }
 
-console.log(config)
-
 module.exports = config
