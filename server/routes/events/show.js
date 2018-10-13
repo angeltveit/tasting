@@ -14,7 +14,7 @@ module.exports = async function create_event(req, res) {
   })
 
   const promises = [
-    db('events').where({ id: req.params.id }),
+    db('events').where({ id: req.params.id }).first(),
     db('events_participants')
       .where({ event_id: req.params.id })
       .select(['users.id', 'username', 'untappd_id'])
