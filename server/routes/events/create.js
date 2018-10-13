@@ -20,7 +20,7 @@ module.exports = async function create_event(req, res) {
   })
 
   req.body = Object.assign({}, req.body, {
-    code,
+    code: code.toLowerCase(),
     created_by: req.payload.id,
   })
 
