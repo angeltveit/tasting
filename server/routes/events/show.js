@@ -19,10 +19,13 @@ module.exports = async function create_event(req, res) {
       .where({ event_id: req.params.id })
       .select(['users.id', 'username', 'untappd_id'])
       .join('users', 'users.id', 'events_participants.user_id'),
+    db('events_beers')
+      .where({ event_id: req.params.id })
+      .leftJoin('beers', 'beers.id', 'events_beers.beer_id')
   ]
 
-  const [event, participants] = await Promise.all(promises)
+  const [event, participants, beers] = await Promise.all(promises)
 
   // TODO: list beers in event
-  res.status(200).json({ event, participants })
+  res.status(200).json({ event, participants, beers })
 }

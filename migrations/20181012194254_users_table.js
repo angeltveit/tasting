@@ -6,7 +6,7 @@ exports.up = function(knex, Promise) {
       .defaultTo('user')
       .notNullable()
     table.string('username')
-    table.string('untappd_id')
+    table.string('untappd_id').unique()
     table.timestamp('created_at').defaultTo(knex.fn.now())
     table.timestamp('updated_at').defaultTo(knex.fn.now())
   })

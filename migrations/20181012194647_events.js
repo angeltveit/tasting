@@ -3,7 +3,7 @@ exports.up = function(knex, Promise) {
   return knex.schema.createTable('events', function(table) {
     table.increments()
     table.string('name')
-    table.string('code')
+    table.string('code').unique()
     table.timestamp('started_at')
     table.timestamp('ended_at')
     table.integer('created_by').references('users.id')
@@ -13,5 +13,5 @@ exports.up = function(knex, Promise) {
 };
 
 exports.down = function(knex, Promise) {
-  return knex.schema.dropTable('users')
+  return knex.schema.dropTable('events')
 };
