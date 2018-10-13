@@ -1,4 +1,5 @@
 export function login(token) {
+  if(!token) return
   localStorage.beerToken = token
   return token
 }
