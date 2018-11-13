@@ -3,38 +3,59 @@ const randomString = require('random-string');
 const db = require('../../services/db')
 
 const schema = Joi.object().keys({
+  name: Joi.string(),
   beers: Joi.array().items(
     Joi.object().keys({
-      uid: Joi.string().required(),
+      uid: Joi.required(),
       api: Joi.string().default('untappd'),
       brewery: Joi.string().required(),
       country: Joi.string(),
       name: Joi.string().required(),
       label: Joi.string(),
-      description: Joi.string(),
+      description: Joi.string().allow(''),
       style: Joi.string(),
-      ratings: Joi.number().integer(),
-      rating: Joi.number().min(1).max(5),
+      //ratings: Joi.number().integer(),
+      //rating: Joi.number().min(1).max(5),
       details: Joi.object().required(),
-      sort: Joi.number().required(),
+      sort: Joi.number(),
     }),
-  ).unique('sort'),
+  ),
 })
 
 module.exports = async function create_event(req, res) {
-  let result = Joi.validate(req.body, schema)
+  let result = Joi.validate(req.body, schema, {
+    convert: true,
+    allowUnknown: true,
+  })
 
   if(result.error) return res.status(500).json({
     error: result.error.details[0].message
   })
 
+  // Replace body with validated data
+  req.body = result.value
+
+  const access = await db('events')
+    .where({ id: req.params.id, created_by: req.payload.id })
+
+  if(!access) return res.status(403).json({ error: 'unauthorized' })
+  if(access.started_at) return res.status(409).json({ error: 'event_started' })
+
+  if(req.body.name) {
+    await db('events')
+      .update({
+        name: req.body.name,
+      })
+      .where({ id: req.params.id })
+  }
+
   const exists = await db('beers')
-    .whereIn('uid', req.body.beers.map(b=> b.uid))
+    .whereIn('uid', req.body.beers.map(b => b.uid))
     .andWhere('api', 'untappd')
 
   // update existing
   let promises = req.body.beers
-    .filter(beer => exists.find(e=> e.uid === beer.uid))
+    .filter(beer => exists.find(e => e.uid == beer.uid))
     .map(beer => {
       delete beer.sort
       return db('beers')
@@ -47,7 +68,7 @@ module.exports = async function create_event(req, res) {
 
   // insert new beers
   req.body.beers
-    .filter(beer => !exists.find(e=> e.uid === beer.uid))
+    .filter(beer => !exists.find(e => e.uid == beer.uid))
     .map(beer => {
       delete beer.sort
       return beer
@@ -59,6 +80,7 @@ module.exports = async function create_event(req, res) {
   const beersInEvent = await db('beers')
     .whereIn('uid', req.body.beers.map(b => b.uid))
     .andWhere('api', 'untappd')
+
   await db('events_beers')
     .where('event_id', req.params.id)
     .delete()
@@ -72,5 +94,21 @@ module.exports = async function create_event(req, res) {
 
   await Promise.all(promises)
 
-  res.json({ status: 'ok' })
+  const eventPromises = [
+    db('events').where({ id: req.params.id }).first(),
+    db('events_participants')
+      .where({ event_id: req.params.id })
+      .select(['users.id', 'username', 'untappd_id'])
+      .join('users', 'users.id', 'events_participants.user_id'),
+    db('events_beers')
+      .select('beers.*')
+      .where({ event_id: req.params.id })
+      .leftJoin('beers', 'beers.id', 'events_beers.beer_id')
+  ]
+
+  const [event, participants, beers] = await Promise.all(eventPromises)
+  event.beers = beers
+  event.participants = participants
+
+  res.json({ status: 'ok', event })
 }

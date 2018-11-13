@@ -2,7 +2,8 @@ import { Component, Template } from '@scoutgg/widgets'
 import { wire } from 'hyperhtml'
 import { Route } from 'widgets-router'
 import { login, current } from '../../services/auth'
-import '../button/button'
+
+import '../../components/button/button'
 
 @Route('/login')
 @Component('beer')

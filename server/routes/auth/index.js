@@ -12,14 +12,16 @@ app.get('/untappd', passport.authenticate('untappd', {
   let exists = await db('users')
     .where({ untappd_id: req.user.profile.id })
     .first()
+  const photos = req.user.profile.photos
 
   if(!exists) {
     try {
       await db('users').insert({
         untappd_id: req.user.profile.id,
-        username: req.user.profile.displayName
+        username: req.user.profile.displayName,
+        avatar: photos.length ? photos[photos.length - 1].value : null,
       })
-      exists = db('users')
+      exists = await db('users')
         .where({
           untappd_id: req.user.profile.id,
         })
@@ -35,6 +37,7 @@ app.get('/untappd', passport.authenticate('untappd', {
     id: exists.id,
     untappdId: exists.untappd_id,
     username: exists.username,
+    avatar: exists.avatar,
   })
 
   res.redirect(`/?token=${token}`)

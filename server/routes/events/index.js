@@ -3,9 +3,12 @@ const validateUser = require('../../middleware/validate-user')
 
 app.use(validateUser)
 app.post('/', require('./create'))
-app.post('/join', require('./join'))
+app.post('/:code/participate', require('./participate'))
+app.post('/:id/vote', require('./vote'))
 
 app.patch('/:id', require('./update'))
+app.patch('/:id/start', require('./start'))
+app.patch('/:id/next', require('./next'))
 
 app.get('/', require('./list'))
 app.get('/:id', require('./show'))

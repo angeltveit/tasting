@@ -8,7 +8,10 @@ import { joinEvent } from "../../services/events"
 @Template(function (html) {
   html`
     <h1>Join event</h1>
-    <input placeholder="event pin" onchange=${e => this.eventPin = e.target.value} />
+    <input
+      placeholder="event pin"
+      onchange=${e => this.eventPin = e.target.value}
+    />
     <beer-button onclick=${() => this.joinEvent()}>join event</beer-button>
   `
 })
@@ -17,6 +20,5 @@ export default class JoinEvent extends HTMLElement {
 
   async joinEvent() {
     const result = await joinEvent(this.eventPin)
-    console.log("joining event", this.eventPin, result)
   }
 }

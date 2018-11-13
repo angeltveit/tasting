@@ -13,6 +13,8 @@ module.exports = async function create_event(req, res) {
     error: result.error.details[0].message,
   })
 
+  req.body = result.value
+
   const code = randomString({
     readable: true,
     capitalization: false,
@@ -27,5 +29,5 @@ module.exports = async function create_event(req, res) {
   const event = await db('events').insert(req.body)
     .returning(['id', 'name', 'code', 'created_at'])
 
-  res.status(200).json(Object.assign({ status: 'ok' }, event[0]))
+  res.status(200).json({ status: 'ok', event: event[0] })
 }

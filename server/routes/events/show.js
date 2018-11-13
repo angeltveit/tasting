@@ -14,18 +14,39 @@ module.exports = async function create_event(req, res) {
   })
 
   const promises = [
-    db('events').where({ id: req.params.id }).first(),
+    db('events').where({
+      id: req.params.id,
+      created_by: req.payload.id,
+    }).first(),
     db('events_participants')
       .where({ event_id: req.params.id })
       .select(['users.id', 'username', 'untappd_id'])
       .join('users', 'users.id', 'events_participants.user_id'),
     db('events_beers')
+      .select([
+        'beers.*',
+      ])
       .where({ event_id: req.params.id })
-      .leftJoin('beers', 'beers.id', 'events_beers.beer_id')
+      .leftJoin('beers', 'beers.id', 'events_beers.beer_id'),
+    db('checkins')
+      .select([
+        'checkins.*',
+        'users.username',
+        'users.role',
+        'users.untappd_id',
+      ])
+      .where({ event_id: req.params.id })
+      .join('users', 'users.id', 'checkins.user_id'),
   ]
 
-  const [event, participants, beers] = await Promise.all(promises)
+  const [event, participants, beers, checkins] = await Promise.all(promises)
+
+  // If no event, you do not own it
+  if(!event) return res.status(403).json({ error: 'Unauthorized' })
+
+  event.beers = beers
+  event.participants = participants
 
   // TODO: list beers in event
-  res.status(200).json({ event, participants, beers })
+  res.status(200).json({ event, participants, beers, checkins })
 }

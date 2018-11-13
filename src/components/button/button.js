@@ -2,9 +2,7 @@ import { Component, Template, Attribute } from '@scoutgg/widgets'
 import { PageRouter } from 'widgets-router'
 
 @Component('beer')
-@Attribute('href', String, {
-  default: 'javascript:void()'
-})
+@Attribute('href', String)
 @Template(function (html) {
   html `
     <style>
@@ -17,9 +15,10 @@ import { PageRouter } from 'widgets-router'
         border-radius: var(--button-radius, 2em);
         font-weight: var(--button-font-weight, inherit);
         text-decoration: none;
+        cursor: pointer;
       }
     </style>
-    <a href=${this.href || 'javascript:void()'}><slot></slot></a>
+    <a href=${this.href}><slot></slot></a>
   `
 })
 export default class Button extends HTMLElement {
