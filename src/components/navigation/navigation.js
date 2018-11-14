@@ -8,20 +8,37 @@ import { current } from '../../services/auth'
     <style>
       nav {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
+        justify-content: space-between;
         align-items: center;
+        height: 64px;
+        background-color: var(--primary-3);
+        padding: 0 .5em;
+      }
+      .brand {
+        display: flex;
+        flex: 1;
         justify-content: center;
-        height: 100px;
-        background-image: url(/assets/images/bg-large.jpg);
-        background-position: center;
-        background-size: cover;
-        animation-duration: 5s;
-        animation-iteration-count: infinite;
-        -webkit-mask-box-image: url(/assets/images/wave2.svg)
+        align-items: center;
+        filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
+      }
+      .back, .action {
+        width: 140px;
+      }
+      .action {
+        display: flex;
+        justify-content: flex-end;
+      }
+      .brand img {
+        height: 2.25em;
       }
       h1 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 0;
         font-size: 2em;
-        font-weight: 300;
         font-family: var(--accent-font);
         filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
       }
@@ -39,7 +56,13 @@ import { current } from '../../services/auth'
     </style>
     ${ current() && wire()`
       <nav>
-        <h1> ${ current().username } </h1>
+        <div class="back"></div>
+        <div class="brand">
+          <img src="/assets/images/beer.svg" /> <h1>tastr</h1>
+        </div>
+        <div class="action">
+          <beer-button>+ New</beer-button>
+        </div>
       </nav>
     `}
   `

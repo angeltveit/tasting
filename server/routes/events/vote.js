@@ -25,7 +25,7 @@ module.exports = async function checkin(req, res, next) {
 
   if(!participated) return res.status(403).json({ error: 'unauthorized' })
 
-  const checkin = await db('checkins')
+  let checkin = await db('checkins')
     .where({
       event_id: event.id,
       user_id: req.payload.id,
@@ -42,6 +42,22 @@ module.exports = async function checkin(req, res, next) {
         comment: req.body.comment,
         rating: req.body.rating,
       })
+    checkin = await db('checkins')
+      .select([
+        'users.*',
+        'event_id',
+        'user_id',
+        'beer_id',
+        'comment',
+        'rating'
+      ])
+      .join('users','user_id','users.id')
+      .where({
+        event_id: event.id,
+        user_id: req.payload.id,
+        beer_id: event.current_beer,
+      })
+      .first()
   }
 
   let [totalCheckins, checkins, beers] = await Promise.all([
@@ -86,6 +102,13 @@ module.exports = async function checkin(req, res, next) {
       id: req.params.id,
     })
     .first()
+
+  req.io.in(`play:${event.id}`).emit('vote', {
+    name: 'vote',
+    event,
+    participants,
+    checkin,
+  })
 
   res.json({ event, checkin })
 }

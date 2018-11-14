@@ -80,6 +80,7 @@ export default class CreateEvent extends HTMLElement {
   }
   async start() {
     await this.event.save('start')
+    router(`/manage/${this.event.id}`)
   }
   async save(name) {
     const isNew = this.event.id < 0

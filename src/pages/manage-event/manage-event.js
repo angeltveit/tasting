@@ -1,6 +1,7 @@
 import { Component, Attribute, Template } from '@scoutgg/widgets'
 import { Route, router } from 'widgets-router'
 import { wire } from 'hyperhtml'
+import socket from '../../services/socket.io'
 import Event from '../../models/event'
 
 import '../../components/selected-beers/selected-beers'
@@ -32,13 +33,20 @@ import '../../components/selected-beers/selected-beers'
 export default class ManageEvent extends HTMLElement {
   async connectedCallback() {
     await this.load()
-    if(!['running','voting'].includes(this.event.state)) {
+    socket.subscribe(`play:${this.event.id}`)
+    socket.on('vote', (payload) => {
+      console.log('got', payload)
+      this.event.current_beer = payload.event.current_beer
+      this.load()
+    })
+    if(!['pending', 'running','voting'].includes(this.event.state)) {
       router(`/create-event/${this.event.id}`)
     }
   }
 
   async load() {
     const { event, participants, beers, checkins } = await this.event.load()
+
     this.beers = beers
     this.checkins = checkins
     this.availableBeers = (beers || []).filter(beer => {

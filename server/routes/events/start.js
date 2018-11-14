@@ -24,6 +24,10 @@ module.exports = async function startEvent(req, res, next) {
       created_by: req.payload.id,
     })
     .first()
+  req.io.in(`play:${event.id}`).emit('start', {
+    name: 'start',
+    event,
+  })
 
   res.json({ event })
 }

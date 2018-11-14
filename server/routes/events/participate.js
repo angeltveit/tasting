@@ -14,7 +14,7 @@ module.exports = async function participate(req, res, next) {
       .first()
   }
 
-  const participants = await db('events_participants')
+  let participants = await db('events_participants')
     .select([
       'users.id',
       'users.username',
@@ -28,13 +28,31 @@ module.exports = async function participate(req, res, next) {
   const participated = participants.some(p => p.id === req.payload.id)
 
   if(participated) return res.json({ event, participants })
+
   if(event.started_at) return res.status(403).json({ error: 'event_started' })
+
 
   await db('events_participants')
     .insert({
       event_id: event.id,
       user_id: req.payload.id,
-    })
+    }),
+  participants = await db('events_participants')
+    .select([
+      'users.id',
+      'users.username',
+      'users.untappd_id',
+      'users.role',
+      'users.avatar',
+    ])
+    .where({ event_id: event.id })
+    .join('users', 'user_id', 'users.id')
+
+  req.io.in(`play:${event.id}`).emit('participate', {
+    name: 'participate',
+    event,
+    participants,
+  })
 
   res.json({ event, participants })
 }

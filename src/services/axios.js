@@ -68,7 +68,7 @@ export class Axios {
     if(
       (MODELS[this.constructor.name] && MODELS[this.constructor.name][this.id]) &&
       (Date.now() - MODELS[this.constructor.name][this.id].__version < 10*1000) &&
-      !params.reload
+      !params.$reload
     ) {
       return Promise.resolve(MODELS[this.constructor.name][this.id])
     }
