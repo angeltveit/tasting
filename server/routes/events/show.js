@@ -13,40 +13,51 @@ module.exports = async function create_event(req, res) {
     error: result.error.details[0].message,
   })
 
-  const promises = [
-    db('events').where({
-      id: req.params.id,
-      created_by: req.payload.id,
-    }).first(),
-    db('events_participants')
-      .where({ event_id: req.params.id })
-      .select(['users.id', 'username', 'untappd_id'])
-      .join('users', 'users.id', 'events_participants.user_id'),
-    db('events_beers')
-      .select([
-        'beers.*',
-      ])
-      .where({ event_id: req.params.id })
-      .leftJoin('beers', 'beers.id', 'events_beers.beer_id'),
-    db('checkins')
-      .select([
-        'checkins.*',
-        'users.username',
-        'users.role',
-        'users.untappd_id',
-      ])
-      .where({ event_id: req.params.id })
-      .join('users', 'users.id', 'checkins.user_id'),
-  ]
+  let event = await db.raw(`
+    select
+    	events.*,
+    	json_agg(distinct p) as participants,
+    	json_agg(distinct c) as checkins,
+    	json_agg(distinct b) as beers
+    from events
+    left join (
+    	select
+    		users.*,
+    		event_id
+    	from events_participants
+    	join users on users.id = user_id
+      where event_id = ?
+    ) p on p.event_id = events.id
+    left join (
+    	select
+    		users.*,
+    		beer_id,
+    		comment,
+    		rating,
+    		checkins.created_at,
+    		event_id
+    	from
+    		checkins
+    	join users on users.id = user_id
+      where event_id = ?
+    ) c on c.event_id = events.id
+    left join (
+    	select
+    		beers.*,
+    		event_id
+    	from
+    		events_beers
+    	join beers on beers.id = beer_id
+      where event_id = ?
+    ) b on b.event_id = events.id
+    where events.id = ?
+    group by events.id, p.event_id, c.event_id
+    order by events.id
+  `,[req.params.id, req.params.id, req.params.id, req.params.id])
+  event = event.rows[0]
 
-  const [event, participants, beers, checkins] = await Promise.all(promises)
-
-  // If no event, you do not own it
+  // If no event, you do not own it (Currently disabled)
   if(!event) return res.status(403).json({ error: 'Unauthorized' })
 
-  event.beers = beers
-  event.participants = participants
-
-  // TODO: list beers in event
-  res.status(200).json({ event, participants, beers, checkins })
+  res.status(200).json({ event })
 }
