@@ -57,7 +57,7 @@ export default class CreateEvent extends HTMLElement {
     if(!this.event) {
       this.event = new Event({})
     } else {
-      await this.event.load()
+      await this.event.load({ $reload: true })
       setTimeout(() => this.refreshSelected(), 500)
       this.render()
     }

@@ -5,6 +5,7 @@ app.use(validateUser)
 app.post('/', require('./create'))
 app.post('/:code/participate', require('./participate'))
 app.post('/:id/vote', require('./vote'))
+app.post('/:id/checkin', require('./checkin'))
 
 app.patch('/:id', require('./update'))
 app.patch('/:id/start', require('./start'))

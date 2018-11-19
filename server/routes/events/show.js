@@ -59,5 +59,10 @@ module.exports = async function create_event(req, res) {
   // If no event, you do not own it (Currently disabled)
   if(!event) return res.status(403).json({ error: 'Unauthorized' })
 
+  // Clean up
+  event.participants = event.participants.filter(e => e)
+  event.checkins = event.checkins.filter(e => e)
+  event.beers = event.beers.filter(e => e)
+
   res.status(200).json({ event })
 }

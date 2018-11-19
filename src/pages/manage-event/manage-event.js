@@ -39,19 +39,19 @@ export default class ManageEvent extends HTMLElement {
       this.event.current_beer = payload.event.current_beer
       this.load()
     })
-    if(!['pending', 'running','voting'].includes(this.event.state)) {
+    if(!['pending', 'running', 'voting'].includes(this.event.state)) {
       router(`/create-event/${this.event.id}`)
     }
   }
 
   async load() {
-    const { event, participants, beers, checkins } = await this.event.load()
+    const { event } = await this.event.load({ $reload: true })
 
-    this.beers = beers
-    this.checkins = checkins
-    this.availableBeers = (beers || []).filter(beer => {
+    this.beers = event.beers[0] ? event.beers : []
+    this.checkins = event.checkins[0] ? event.checkins : []
+    this.availableBeers = (this.beers || []).filter(beer => {
       if(this.event.current_beer && this.event.current_beer.id === beer.id) return
-      return !(checkins || []).some((checkin) => checkin.beer_id === beer.id)
+      return !(this.checkins || []).some((checkin) => checkin.beer_id === beer.id)
     })
     setTimeout(() => {
       const el = this.shadowRoot.querySelector('beer-selected-beers')

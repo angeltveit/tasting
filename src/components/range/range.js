@@ -97,9 +97,6 @@ const values = [
       max=10
       oninput=${(e) => this.update(e)}
     />
-
-
-
   `
 })
 export default class Range extends HTMLElement {

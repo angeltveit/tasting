@@ -3,7 +3,9 @@ import { Route } from 'widgets-router'
 import { current } from '../../services/auth'
 import { wire } from 'hyperhtml'
 import socket from '../../services/socket.io'
+import moment from 'moment'
 import Event from '../../models/event'
+import emitter from '../../services/emitter'
 import { letItSnow } from '../../services/snow'
 import '../../components/range/range'
 
@@ -153,7 +155,11 @@ export default class Play extends HTMLElement {
     this.load()
   }
   async load() {
-    const { event, participants } = await fetch(`/api/events/${this.code}/participate`, {
+    const {
+      event,
+      participants,
+      checkins,
+    } = await fetch(`/api/events/${this.code}/participate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -172,7 +178,24 @@ export default class Play extends HTMLElement {
     })
 
     this.event = new Event(event, { overwrite: true })
+
+    if(this.event.state === 'voting') {
+      emitter.emit('hide-navigation')
+    } else {
+      emitter.emit('show-navigation')
+    }
+
     this.participants = participants
+    if(this.event.state === 'ended') {
+      await fetch(`/api/events/${this.event.id}/checkin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Beerer ${localStorage.beerToken}`,
+        }
+      })
+        .then(res => res.json())
+    }
     this.render()
   }
 }

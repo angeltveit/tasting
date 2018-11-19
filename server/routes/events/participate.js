@@ -8,6 +8,19 @@ module.exports = async function participate(req, res, next) {
     })
     .first()
 
+  const checkins = await db('checkins')
+    .select([
+      'beers.*',
+      'user_id',
+      'checkins.comment',
+      'checkins.rating',
+    ])
+    .where({
+      event_id: event.id,
+      user_id: req.payload.id,
+    })
+    .join('beers', 'beers.id', 'beer_id')
+
   if(event.current_beer) {
     event.current_beer = await db('beers')
       .where({ id: event.current_beer })
@@ -27,7 +40,10 @@ module.exports = async function participate(req, res, next) {
 
   const participated = participants.some(p => p.id === req.payload.id)
 
-  if(participated) return res.json({ event, participants })
+  event.participants = participants
+  event.checkins = checkins
+
+  if(participated) return res.json({ event, participants, checkins })
 
   if(event.started_at) return res.status(403).json({ error: 'event_started' })
 
@@ -48,11 +64,24 @@ module.exports = async function participate(req, res, next) {
     .where({ event_id: event.id })
     .join('users', 'user_id', 'users.id')
 
+  const participant = await db('users')
+  .select([
+    'users.id',
+    'users.username',
+    'users.untappd_id',
+    'users.role',
+    'users.avatar',
+  ])
+  .where({ id: req.payload.id })
+  .first()
+
   req.io.in(`play:${event.id}`).emit('participate', {
     name: 'participate',
     event,
     participants,
+    participant,
+    checkins,
   })
 
-  res.json({ event, participants })
+  res.json({ event, participants, participant, checkins })
 }

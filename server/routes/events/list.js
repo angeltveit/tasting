@@ -4,35 +4,22 @@ const db = require('../../services/db')
 
 module.exports = async function create_event(req, res) {
   // Get all events created by user
-  const events = await db.raw(`
-    select
-    	events.*,
-    	json_agg(distinct p) as participants,
-    	json_agg(distinct c) as checkins
-    from events
-    left join (
-    	select
-    		users.*,
-    		event_id
-    	from events_participants
-    	join users on users.id = user_id
-      where user_id = ?
-    ) p on p.event_id = events.id
-    left join (
-    	select
-    		users.*,
-    		beer_id,
-    		comment,
-    		rating,
-    		checkins.created_at,
-    		event_id
-    	from
-    		checkins
-    	join users on users.id = user_id
-      where event_id = events.id
-    ) c on c.event_id = events.id
-    group by events.id, p.event_id, c.event_id
-    order by events.id
-  `, [req.payload.id])
+  let events
+  try {
+    events = await db.raw(`
+      SELECT
+        	events.*,
+        	JSON_AGG(DISTINCT u) AS owner
+      FROM events_participants AS my_events
+      LEFT JOIN events on events.id = my_events.event_id
+      LEFT JOIN users u on u.id = created_by
+      WHERE my_events.user_id = ? OR created_by = ?
+      GROUP BY events.id, my_events.event_id
+      ORDER BY my_events.event_id desc
+    `, [req.payload.id, req.payload.id])
+  } catch(error) {
+    console.error(error)
+  }
+
   res.json({ events: events.rows })
 }

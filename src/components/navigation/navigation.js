@@ -1,13 +1,13 @@
 import { Component, Template } from '@scoutgg/widgets'
 import { wire } from 'hyperhtml'
-import { current } from '../../services/auth'
+import { current, logout } from '../../services/auth'
+import emitter from '../../services/emitter'
 
 @Component('beer')
 @Template(function (html) {
   html `
     <style>
       nav {
-        display: flex;
         flex-direction: row;
         justify-content: space-between;
         align-items: center;
@@ -55,17 +55,35 @@ import { current } from '../../services/auth'
       }
     </style>
     ${ current() && wire()`
-      <nav>
+      <nav style=${this.visibility}>
         <div class="back"></div>
         <div class="brand">
           <img src="/assets/images/beer.svg" /> <h1>tastr</h1>
         </div>
         <div class="action">
-          <beer-button>+ New</beer-button>
+          <beer-button onclick=${() => this.logout()}>Log out</beer-button>
         </div>
       </nav>
     `}
   `
 })
 export default class Navigation extends HTMLElement {
+  connectedCallback() {
+    this.show = true
+    this.render()
+    emitter.on('show-navigation', () => {
+      this.show = true
+      this.render()
+    })
+    emitter.on('hide-navigation', () => {
+      this.show = false
+      this.render()
+    })
+  }
+  logout() {
+    logout()
+  }
+  get visibility() {
+    return this.show ? 'display: flex;' : 'display: none;'
+  }
 }
