@@ -34,7 +34,7 @@ import { wire } from 'hyperhtml'
         grid-column: span 2;
         text-align: center;
         padding: .5em;
-        font-size: 3em;
+        font-size: 6em;
         filter: drop-shadow(3px 2px 1px rgba(0,0,0,1));
         font-weight: bold;
       }
@@ -43,6 +43,9 @@ import { wire } from 'hyperhtml'
         filter: drop-shadow(3px 2px 1px rgba(0,0,0,1));
         margin: 0;
 
+      }
+      h2 {
+        font-size: 3em;
       }
       .snow {
         position: fixed;
@@ -64,7 +67,7 @@ import { wire } from 'hyperhtml'
         display: flex;
         align-items: center;
         background-color: var(--primary-1);
-        max-width: 400px;
+        margin-right: .5em;
         padding: .5em 1em;
         box-sizing: border-box;
         transform: rotate(90deg);
@@ -80,6 +83,9 @@ import { wire } from 'hyperhtml'
         color: var(--success);
         font-size: 1.7em;
         margin-left: auto;
+      }
+      .participants {
+        font-size: 1.5em;
       }
       @keyframes participate {
         from {
@@ -99,10 +105,26 @@ import { wire } from 'hyperhtml'
       <h1>tastr</h1>
     </div>
     <div class="right">
+    ${this.event.state === 'pending' ? wire()`
       <h2>Waiting for participants</h2>
       <div class="participants">
         ${this.participantsList}
       </div>
+    ` : null}
+
+    ${this.event.state === 'running' ? wire()`
+      <h2>New beer coming up!</h2>
+      <div class="participants">
+        ${this.participantsList}
+      </div>
+    ` : null}
+
+    ${this.event.state === 'voting' ? wire()`
+      <h2>Waiting for votes:</h2>
+      <div class="participants">
+        ${this.participantsList}
+      </div>
+    ` : null}
     </div>
   `
 })
@@ -116,6 +138,9 @@ export default class Tv extends HTMLElement {
       this.load()
     })
     socket.on('start', (payload) => {
+      this.load()
+    })
+    socket.on('vote', (payload) => {
       this.load()
     })
     socket.on('participate', (payload) => {
@@ -140,9 +165,29 @@ export default class Tv extends HTMLElement {
     return (this.participants || []).map(participant => wire(participant)`
       <div class="participant">
         <img class="avatar" src=${participant.avatar} />${participant.username}
-        <i class="fas fa-check-circle"></i>
+        ${['voting', 'running', 'pending'].includes(this.event.state) ? wire()`
+          <i class=${this.checkClass(participant) ? 'fas fa-check-circle' : ''}></i>
+        ` : null}
+        ${['running'].includes(this.event.state) ? wire()`
+          <b>3.5</b>
+        ` : null}
       </div>
     `)
+  }
+  checkClass(participant) {
+    switch(this.event.state) {
+      case 'pending':
+        return true;
+      break;
+      case 'voting':
+        return this.event.checkins.some(c => {
+          return c.id === participant.id && c.beer_id === this.event.current_beer
+        })
+      break;
+      case 'running':
+        return true
+      break;
+    }
   }
   async load() {
     const data = await this.event.load({ $reload: true })
