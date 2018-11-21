@@ -39,9 +39,11 @@ router('/', function (context, next) {
   const token = qs.parse(window.location.search).token
   if(token || localStorage.beerToken) {
     login(token)
-    const sessionRoute = sessionStorage.redirectTo
-    if(sessionRoute) sessionStorage.removeItem('redirectTo')
-    setTimeout(() => router(sessionRoute || '/welcome'), 250)
+    setTimeout(() => {
+      const sessionRoute = sessionStorage.redirectTo
+      if(sessionRoute) sessionStorage.removeItem('redirectTo')
+      router(sessionRoute || '/welcome')
+    }, 250)
   }
 })
 // Bootstrap Widgets (Start it)
