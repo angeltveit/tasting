@@ -29,7 +29,7 @@ if(module.hot) {
 router(function(context, next) {
   if(context.pathname === '/login') return next()
   if(!localStorage.beerToken) {
-    sessionStorage.redirectTo = context.pathname
+    if(context.pathname !== '/') sessionStorage.redirectTo = context.pathname
     router.redirect('/login')
   }
   next()
