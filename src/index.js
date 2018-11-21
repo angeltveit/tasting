@@ -40,7 +40,7 @@ router('/', function (context, next) {
   if(token || localStorage.beerToken) {
     login(token)
     const sessionRoute = sessionStorage.redirectTo
-    if(sessionRoute) sessionRoute.removeItem('redirectTo')
+    if(sessionRoute) sessionStorage.removeItem('redirectTo')
     setTimeout(() => router(sessionRoute || '/welcome'), 250)
   }
 })
