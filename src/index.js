@@ -28,7 +28,10 @@ if(module.hot) {
 
 router(function(context, next) {
   if(context.pathname === '/login') return next()
-  if(!localStorage.beerToken) router.redirect('/login')
+  if(!localStorage.beerToken) {
+    sessionStorage.redirectTo = context.pathname
+    router.redirect('/login')
+  }
   next()
 })
 // Middleware to check if we have received a token
@@ -36,7 +39,9 @@ router('/', function (context, next) {
   const token = qs.parse(window.location.search).token
   if(token || localStorage.beerToken) {
     login(token)
-    setTimeout(() => router('/welcome'), 250)
+    const sessionRoute = sessionStorage.redirectTo
+    if(sessionRoute) sessionRoute.removeItem(redirectTo)
+    setTimeout(() => router(sessionRoute || '/welcome'), 250)
   }
 })
 // Bootstrap Widgets (Start it)
