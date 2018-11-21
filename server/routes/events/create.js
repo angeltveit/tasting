@@ -18,7 +18,7 @@ module.exports = async function create_event(req, res) {
   const code = randomString({
     readable: true,
     capitalization: false,
-    length: 8,
+    length: 6,
   })
 
   req.body = Object.assign({}, req.body, {
