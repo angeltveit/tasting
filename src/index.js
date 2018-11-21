@@ -29,7 +29,9 @@ if(module.hot) {
 router(function(context, next) {
   if(context.pathname === '/login') return next()
   if(!localStorage.beerToken) {
-    if(context.pathname !== '/') sessionStorage.redirectTo = context.pathname
+    if(!['/api/auth', '/'].includes(context.pathname)) {
+      sessionStorage.redirectTo = context.pathname
+    }
     router.redirect('/login')
   }
   next()
@@ -42,6 +44,7 @@ router('/', function (context, next) {
     setTimeout(() => {
       const sessionRoute = sessionStorage.redirectTo
       if(sessionRoute) sessionStorage.removeItem('redirectTo')
+      debugger
       router(sessionRoute || '/welcome')
     }, 250)
   }
