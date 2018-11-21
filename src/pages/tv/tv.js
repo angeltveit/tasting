@@ -98,7 +98,8 @@ import { wire } from 'hyperhtml'
     </style>
     <canvas class="snow"></canvas>
     <header>
-      ${this.event.name}
+      <div>${this.event.name}</div>
+      <small>Visit ${window.location.origin}/p/${this.event.code}</small>
     </header>
     <div class="left">
       <img class="logo" src="/assets/images/beer.svg" />
@@ -106,7 +107,7 @@ import { wire } from 'hyperhtml'
     </div>
     <div class="right">
     ${this.event.state === 'pending' ? wire()`
-      <h2>Waiting for participants</h2>
+
       <div class="participants">
         ${this.participantsList}
       </div>
@@ -124,6 +125,9 @@ import { wire } from 'hyperhtml'
       <div class="participants">
         ${this.participantsList}
       </div>
+    ` : null}
+    ${this.event.state === 'ended' ? wire()`
+      <h2>DONE</h2>
     ` : null}
     </div>
   `
