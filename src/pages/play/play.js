@@ -120,11 +120,16 @@ import '../../components/range/range'
       <beer-button onclick=${(e) => this.save() }>Cast vote</beer-button>
     ` : null}
 
-    ${this.event && this.event.state === 'ended' ? wire()`
-      ${this.myCheckins.map(checkin => {
-
-      })}
-    ` : null}
+    ${this.event && this.event.state === 'ended' ? this.myCheckins
+      .map(checkin => wire()`
+        <div class="checkin">
+          <div class="logo">
+            <img src="${checkin.label}" />
+          </div>
+          <div class="title">${checkin.brewery} - ${checkin.name}</div>
+        </div>
+      `)
+     : null}
   `
 })
 export default class Play extends HTMLElement {
