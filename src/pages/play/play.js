@@ -156,8 +156,9 @@ import '../../components/range/range'
               <div class="brewery">${checkin.brewery}</div>
             </div>
             <div class="description">
+              <div>Abv:</div> <div>${checkin.beer.beer_abv}%</div>
               <div>Your rating:</div> <div>${checkin.rating}</div>
-              <div>The world:</div> <div>${checkin.checkin_details.beer.auth_rating}</div>
+              <div>Previous:</div> <div>${checkin.checkin_details.ratings.old_score || 0}</div>
             </div>
           </div>
         `)}
