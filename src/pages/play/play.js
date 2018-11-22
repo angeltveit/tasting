@@ -99,6 +99,9 @@ import '../../components/range/range'
       }
       .checkin .logo {
         grid-row: span 2;
+        align-items: center;
+        justify-content: center;
+        display: flex;
       }
       .checkin .brewery {
         font-size: .9em;
