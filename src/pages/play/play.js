@@ -100,6 +100,14 @@ import '../../components/range/range'
       .checkin .logo {
         grid-row: span 2;
       }
+      .checkin .brewery {
+        font-size: .9em;
+        color: rgba(255,255,255,.7);
+      }
+      .checkin .description {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
     </style>
 
     <canvas class=${['snow', this.event && this.event.state].join(' ')}></canvas>
@@ -134,16 +142,26 @@ import '../../components/range/range'
       <beer-button onclick=${(e) => this.save() }>Cast vote</beer-button>
     ` : null}
 
-    ${this.event && this.event.state === 'ended' ? this.myCheckins
-      .map(checkin => wire()`
-        <div class="checkin">
-          <div class="logo">
-            <img src="${checkin.label}" />
+    ${this.event && this.event.state === 'ended' ? wire()`
+      <h1>The end!</h1>
+      <p>You voted:</p>
+      ${this.myCheckins
+        .map(checkin => wire()`
+          <div class="checkin">
+            <div class="logo">
+              <img src="${checkin.label}" />
+            </div>
+            <div class="title">
+              <div class="name">${checkin.name}</div>
+              <div class="brewery">${checkin.brewery}</div>
+            </div>
+            <div class="description">
+              <div>Your rating:</div> <div>${checkin.rating}</div>
+              <div>The world:</div> <div>${checkin.checkin_details.beer.auth_rating}</div>
+            </div>
           </div>
-          <div class="title">${checkin.brewery} - ${checkin.name}</div>
-        </div>
-      `)
-     : null}
+        `)}
+    ` : null}
   `
 })
 export default class Play extends HTMLElement {
