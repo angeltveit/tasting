@@ -86,6 +86,20 @@ import '../../components/range/range'
         font-size: 1.5em;
         margin-top: 2em;
       }
+      .checkin {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto 1fr;
+        grid-gap: 1em;
+        margin-bottom: 1em;
+      }
+      .checkin .title {
+        font-size: 1.2em;
+        font-weight: bold;
+      }
+      .checkin .logo {
+        grid-row: span 2;
+      }
     </style>
 
     <canvas class=${['snow', this.event && this.event.state].join(' ')}></canvas>
