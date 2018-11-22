@@ -104,6 +104,13 @@ import '../../components/range/range'
 
     ${this.event && this.event.state === 'running' ? wire()`
       <h1 class="pulse">Waiting for new beer</h1>
+      <beer-button onclick=${(e) => this.save() }>
+        ${!this.blockReload ? wire()`
+          Reload
+        ` : wire()`
+          <beer-loading></beer-loading>
+        `}
+      </beer-button>
     ` : null}
 
     ${this.event && this.event.state === 'voting' ? wire()`
@@ -122,6 +129,9 @@ export default class Play extends HTMLElement {
   async connectedCallback() {
     this.resetVote()
     await this.load()
+    document.addEventListener('visibilitychange', () => {
+      this.load()
+    })
     const canvas = this.shadowRoot.querySelector('canvas')
     const options = {
       particleImage: '/assets/images/snowflake.png',
@@ -134,6 +144,12 @@ export default class Play extends HTMLElement {
       letItSnow(options)
       this.running = true
     }
+  }
+  async reload() {
+    if(this.blockReload) return
+    this.blockReload = true
+    setTimeout(() => this.blockReload = false, 4000)
+    await this.load()
   }
   resetVote() {
     this.vote = {
