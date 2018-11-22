@@ -42,3 +42,12 @@ POST /events/join :code
 5. i et annet vindu `yarn watch` siden torbjørn hater paralelle tasks
 6. [localhost:3000](http://localhost:3000)
 7. ???
+
+
+## Debug in browser
+
+1. Gå til https://tastr.xyz/p/[EVENTKODEN]
+2. Høydeklikk og inspect elementet med checkinnene (beerplay)
+3. Gå i konsollen og skriv `$0.event.checkins` for å få alle checkin-ene
+4. Bla rundt og se på de fine dataene 
+5. ???
