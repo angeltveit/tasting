@@ -172,9 +172,6 @@ export default class Tv extends HTMLElement {
         ${['voting', 'running', 'pending'].includes(this.event.state) ? wire()`
           <i class=${this.checkClass(participant) ? 'fas fa-check-circle' : ''}></i>
         ` : null}
-        ${['running'].includes(this.event.state) ? wire()`
-          <b>3.5</b>
-        ` : null}
       </div>
     `)
   }

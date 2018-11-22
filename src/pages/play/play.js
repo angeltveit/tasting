@@ -121,7 +121,9 @@ import '../../components/range/range'
     ` : null}
 
     ${this.event && this.event.state === 'ended' ? wire()`
-      <h1>Thank you! We're done!</h1>
+      ${this.myCheckins.map(checkin => {
+
+      })}
     ` : null}
   `
 })
@@ -148,8 +150,17 @@ export default class Play extends HTMLElement {
   async reload() {
     if(this.blockReload) return
     this.blockReload = true
-    setTimeout(() => this.blockReload = false, 4000)
+    this.render()
+    setTimeout(() => {
+      this.blockReload = false
+      this.render()
+    }, 4000)
     await this.load()
+  }
+  get myCheckins() {
+    return this.event.checkins.filter(checkin => {
+      return checkin.user_id === current().id
+    })
   }
   resetVote() {
     this.vote = {

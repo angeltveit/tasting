@@ -14,6 +14,7 @@ module.exports = async function participate(req, res, next) {
       'user_id',
       'checkins.comment',
       'checkins.rating',
+      'checkins.checkin_details',
     ])
     .where({
       event_id: event.id,
