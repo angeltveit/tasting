@@ -17,6 +17,7 @@ import './components/navigation/navigation'
 import './pages/manage-event/manage-event'
 import './pages/play/play'
 import './pages/tv/tv'
+import './pages/logout/logout'
 
 
 if(!window.components) window.components = []
