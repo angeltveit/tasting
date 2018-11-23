@@ -71,14 +71,14 @@ export default class Navigation extends HTMLElement {
   connectedCallback() {
     this.show = true
     this.render()
-    emitter.on('show-navigation', () => {
+    /*emitter.on('show-navigation', () => {
       this.show = true
       this.render()
     })
     emitter.on('hide-navigation', () => {
       this.show = false
       this.render()
-    })
+    })*/
   }
   logout() {
     logout()
