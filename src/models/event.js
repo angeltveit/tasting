@@ -11,7 +11,7 @@ export default class Event extends Axios {
     return !this.started_at
   }
   get state() {
-
+    return 'ended'
     if(this.current_beer) {
       const votedOn = this.checkins.filter( c => c.user_id === current().id )
       if(!votedOn.some(c => c.id === (this.current_beer.id || this.current_beer))) return 'voting'
